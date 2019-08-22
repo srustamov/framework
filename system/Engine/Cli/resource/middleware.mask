@@ -1,0 +1,19 @@
+<?php   :namespace;
+
+
+/**
+ * @author  Samir Rustamov <rustemovv96@gmail.com>
+ * @link    https://github.com/srustamov/TT
+ */
+
+use TT\Engine\Http\Request;
+
+
+class :name
+{
+   public function handle(Request $request ,\Closure $next)
+   {
+      return $next($request);
+   }
+
+}
