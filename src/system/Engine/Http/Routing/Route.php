@@ -156,8 +156,6 @@ class Route
 
         $ajax       = $this->app::get('http')->isAjax();
 
-
-
         foreach ($this->routes[ $method ] as $resource) {
             if (! $ajax && $resource['ajax']) {
                 continue;
@@ -259,8 +257,6 @@ class Route
         if ($this->app::isInstance($content, 'response')) {
             return $content;
         }
-
-
         return $this->app::get('response')->setContent($content);
     }
 

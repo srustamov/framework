@@ -20,7 +20,7 @@ use TT\Engine\Http\Response;
 
 class App implements ArrayAccess
 {
-    public const VERSION = '1.3.0';
+    public const VERSION = '1.1.3';
 
     public static $classes = [];
 

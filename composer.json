@@ -18,7 +18,8 @@
     "filp/whoops": "^2.4",
     "lcobucci/jwt": "^3.3",
     "ext-json": "*",
-    "ext-pdo": "*"
+    "ext-pdo": "*",
+    "ext-openssl": "*"
   },
   "config": {
     "optimize-autoloader": true

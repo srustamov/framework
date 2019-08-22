@@ -4,7 +4,7 @@
  * @package	TT
  * @author  Samir Rustamov <rustemovv96@gmail.com>
  * @link https://github.com/srustamov/TT
- * @method static locale($lang)
+ * @method static locale($lang = null)
  * @method static translate(string $string, array $array)
  */
 

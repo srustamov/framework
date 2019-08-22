@@ -2,23 +2,22 @@
 
 use PHPMailer\PHPMailer\PHPMailer;
 use TT\Facades\Language;
-use TT\Engine\Load;
+use TT\Facades\Config;
+use TT\Engine\App;
 
 class Email extends PHPMailer
 {
     private $config;
 
 
-    /**
-     * Email constructor.
-     */
+
     public function __construct()
     {
         parent::__construct();
 
         $this->setLanguage(Language::locale());
 
-        $this->config = Load::class('config')->get('mail');
+        $this->config = Config::get('mail');
 
         $this->isSMTP();
 

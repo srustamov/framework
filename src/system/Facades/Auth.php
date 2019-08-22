@@ -8,10 +8,12 @@
  * @method static guard(string $guard): bool
  * @method static guest(): bool
  * @method static check(): bool
- * @method static attempt(array $data, $remember = false): bool
+ * @method static attempt(array $credentials, $remember = false,$once = false): bool
+ * @method static once(array $credentials): bool
  * @method static logoutUser()
  * @method static getMessage()
  * @method static user($user = null,string $guard = null)
+ * @method static setRemember($user)
  */
 
 

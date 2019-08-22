@@ -28,21 +28,13 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     /**@var Drivers\AttemptDriverInterface */
     protected $attemptDriver;
 
-
     protected $lockTime;
-
 
     protected $maxAttempts;
 
-
     protected $attemptDriverName;
 
-
-    protected $hidden;
-
-
     protected $passwordName;
-
 
     protected $guard = 'default';
 
@@ -52,7 +44,6 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     /**@var array*/
     protected $config;
 
-    /**@var Model*/
     protected $user;
 
     /**@var Model*/
@@ -73,7 +64,6 @@ class Authentication implements \ArrayAccess,\JsonSerializable
 
         if(!isset($this->booted[$guard])) {
             $config = $this->config[$guard];
-
             if(class_exists($config['model'])) {
                 $this->model[$guard] = new $config['model']();
                 if(!($this->model[$guard] instanceof Model)) {
@@ -92,8 +82,6 @@ class Authentication implements \ArrayAccess,\JsonSerializable
                 $this->maxAttempts[$guard] = $config['throttle']['max_attempts'];
                 $this->lockTime[$guard] = $config['throttle']['lock_time'];
             }
-
-            $this->hidden[$guard] = $config['hidden'];
 
             $this->booted[$guard] = true;
         }
@@ -143,12 +131,6 @@ class Authentication implements \ArrayAccess,\JsonSerializable
             }
         }
 
-        if($this->user[$guard]) {
-            foreach ($this->hidden[$guard] as $key) {
-                unset($this->user[$guard][$key]);
-            }
-        }
-
         return $this->user[$guard];
     }
 
@@ -160,16 +142,15 @@ class Authentication implements \ArrayAccess,\JsonSerializable
 
 
     /**
-     * @param array $data
+     * @param array $credentials
      * @param bool $remember
      * @return bool
      * @throws Exception
      */
-    public function attempt(array $data, $remember = false): bool
+    public function attempt(array $credentials, $remember = false,$once = false): bool
     {
         if($this->throttle[$this->guard]) {
             $this->setAttemptDriver();
-
             if (
                 ($attempts = $this->attemptDriver[$this->guard]->getAttemptsCountOrFail()) &&
                 $attempts->count >= $this->maxAttempts &&
@@ -180,15 +161,14 @@ class Authentication implements \ArrayAccess,\JsonSerializable
             }
         }
 
-        if (isset($data[$this->getPasswordName()])) {
-            $password = $data[$this->getPasswordName()];
-
-            unset($data[$this->getPasswordName()]);
+        if (isset($credentials[$this->getPasswordName()])) {
+            $password = $credentials[$this->getPasswordName()];
+            unset($credentials[$this->getPasswordName()]);
         } else {
             throw new InvalidArgumentException('Auth ' . $this->getPasswordName() . ' not found');
         }
 
-        if ($user = $this->model[$this->guard]->find($data)) {
+        if ($user = $this->model[$this->guard]->find($credentials)) {
             if (Hash::check($password, $user->password)) {
                 if($this->throttle[$this->guard]) {
                     $this->attemptDriver[$this->guard]->deleteAttempt();
@@ -197,14 +177,15 @@ class Authentication implements \ArrayAccess,\JsonSerializable
                     $this->setRemember($user);
                 }
                 if ($this->beforeLogin($user,$this->guard)) {
-                    $this->setSession($user);
+                    if (!$once) {
+                        $this->setSession($user);
+                    }
                     $this->afterLogin($user,$this->guard);
                     return true;
                 }
                 return false;
             }
         }
-        /**@var $this->throttle[$this->guard] Att*/
         if($this->throttle[$this->guard]) {
             $this->attemptDriver[$this->guard]->increment();
             $remaining = $this->maxAttempts[$this->guard] - $this->attemptDriver[$this->guard]->getAttemptsCountOrFail()->count;
@@ -219,6 +200,12 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     }
 
 
+    public function once(array $credentials)
+    {
+        return $this->attempt($credentials,false,true);
+    }
+
+
 
     /**
      * @return bool
@@ -228,6 +215,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
         if($this->user[$this->guard] instanceof  Model) {
             return true;
         }
+
         if (Session::get(md5($this->guard).'-login') === true) {
             if ($this->user()) {
                 $authId = Session::get(md5($this->guard).'-id');

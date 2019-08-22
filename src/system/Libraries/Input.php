@@ -16,11 +16,10 @@ class Input
 
     public function get($name = false)
     {
-        if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             if (!$name) {
                 return $_GET;
             }
-
             return $_GET[ $name ] ?? false;
         }
         return false;
@@ -29,7 +28,7 @@ class Input
 
     public function post($name = false)
     {
-        if ($_SERVER[ 'REQUEST_METHOD' ] == 'POST') {
+        if ($_SERVER[ 'REQUEST_METHOD' ] === 'POST') {
             if (!$name) {
                 return $_POST;
             }
@@ -73,7 +72,6 @@ class Input
             return $data;
         }
 
-
         $data = str_replace(array( '&amp;' , '&lt;' , '&gt;' ), array( '&amp;amp;' , '&amp;lt;' , '&amp;gt;' ), $data);
         $data = preg_replace('/(&#*\w+)[\x00-\x20]+;/u', '$1;', $data);
         $data = preg_replace('/(&#x*[0-9A-F]+);*/iu', '$1;', $data);
@@ -105,7 +103,6 @@ class Input
     {
         if (in_array(strtoupper($method), ['PUT' , 'DELETE' , 'PATCH'])) {
             $data = $this->all();
-
             if (isset($args[0]) && !is_array($args[0])) {
                 return $data[$args[0]] ?? false;
             } else {
@@ -124,7 +121,6 @@ class Input
         if (isset($data[$key])) {
             return !is_array($data[$key]) ? trim($data[$key]) : $data[$key];
         }
-
         return false;
     }
 }
