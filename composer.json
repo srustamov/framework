@@ -25,10 +25,10 @@
   },
   "autoload": {
     "psr-4": {
-      "TT\\": "system/"
+      "TT\\": "src/system/"
     },
     "files":[
-      "system/Engine/helpers.php"
+      "src/system/Engine/helpers.php"
     ]
   },
   "minimum-stability": "dev",

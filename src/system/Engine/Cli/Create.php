@@ -67,7 +67,7 @@ class Create
                     $content = str_replace(
                         [ ':namespace' , ':name' ],
                         [ $namespace , $name ],
-                        file_get_contents(__DIR__ . '/resource/'.\strtolower($type).'.mask')
+                        file_get_contents(__DIR__ . '/resource/' .\strtolower($type).'.mask')
                     );
                 }
                 $type .= ($type == 'Middleware') ?'':'s';
@@ -101,7 +101,7 @@ class Create
             $content = str_replace(
                 [':namespace',':name',':accessor'],
                 ['namespace TT\\Facades',ucfirst($name),strtolower($name)],
-                file_get_contents(__DIR__.'/resource/facade.mask')
+                file_get_contents(__DIR__ . '/resource/facade.mask')
             );
 
             $create_and_put = file_put_contents($file, $content);

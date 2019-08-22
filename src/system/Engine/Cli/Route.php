@@ -92,7 +92,7 @@ class Route
         }
 
 
-        $mask = file_get_contents(__DIR__.'/resource/routelist.mask');
+        $mask = file_get_contents(__DIR__ . '/resource/routelist.mask');
 
         foreach ($routes as $method => $parameters) {
             foreach ($parameters as $key => $param) {

@@ -70,12 +70,12 @@ class Benchmark
 
     private function view($data)
     {
-        if(!file_exists(__DIR__.'/view/benchmark.php')) {
+        if(!file_exists(__DIR__ . '/view/benchmark.php')) {
             return null;
         }
         ob_start();
 
-        require_once __DIR__.'/view/benchmark.php';
+        require_once __DIR__ . '/view/benchmark.php';
 
         $content  = ob_get_clean();
 

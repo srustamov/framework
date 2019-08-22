@@ -68,7 +68,7 @@ class PrintConsole
 
     public static function commandList()
     {
-        echo static::_printData('yellow', file_get_contents(__DIR__.'/resource/commands.mask'));
+        echo static::_printData('yellow', file_get_contents(__DIR__ . '/resource/commands.mask'));
     }
 
 
