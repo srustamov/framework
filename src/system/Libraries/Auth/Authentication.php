@@ -70,7 +70,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
                     throw new RuntimeException('Authentication model not instance Database\Model');
                 }
             } else {
-                throw new RuntimeException('Authentication model['.$config['model'].'] not found');
+                throw new RuntimeException(sprintf('Authentication model[%s] not found',$config['model']));
             }
 
             $this->throttle[$guard] = $config['throttle']['enable'] ?? false;
@@ -123,14 +123,12 @@ class Authentication implements \ArrayAccess,\JsonSerializable
         if($user !== null) {
             $this->user[$guard] = $user;
         }
-
         if (!$this->user[$guard]) {
             if ($authId = Session::get(md5($guard).'-id')) {
                 $user = $this->model[$guard]->find($authId);
                 $this->user[$guard] = $user;
             }
         }
-
         return $this->user[$guard];
     }
 
