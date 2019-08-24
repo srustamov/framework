@@ -6,6 +6,7 @@
  */
 
 use TT\Engine\App;
+use TT\Facades\Str;
 use TT\Engine\Cli\Route as CliRoute;
 use TT\Engine\LoadEnvVariables;
 
@@ -28,7 +29,7 @@ class Console
             $command = explode(' ', $command);
         }
 
-        static::run(array_merge([ 'manage' ], array_filter($command)));
+        static::run(array_merge(['manage'], array_filter($command)));
     }
 
 
@@ -39,8 +40,7 @@ class Console
     {
         $instance = new static();
 
-
-        if (isset($argv[ 1 ])) {
+        if (isset($argv[1])) {
             $manage = array_slice($argv, '1');
         } else {
             return PrintConsole::commandList();
@@ -48,11 +48,11 @@ class Console
 
         PrintConsole::output();
 
-        switch (strtolower($manage[ 0 ])) {
+        switch (strtolower($manage[0])) {
             case 'runserver':
-              case 'serve':
-              case 'start':
-              case 'run':
+            case 'serve':
+            case 'start':
+            case 'run':
                 $instance->startPhpDevelopmentServer($manage);
                 break;
             case 'session:table':
@@ -62,19 +62,16 @@ class Console
                 CreateTables::users();
                 break;
             case 'cache:table':
-                $create = App::get('cache')->createDatabaseTable();
-                $create ? 
-                    new PrintConsole('success',PHP_EOL.'Create cache table successfully'.PHP_EOL) :
-                    new PrintConsole('error',PHP_EOL.'Something went wrong'.PHP_EOL);
+                CreateTables::cache();;
                 break;
             case 'view:cache':
                 $instance->clearViewCache();
                 break;
             case 'config:cache':
-                Config::clearConfigsCacheOrCreate($manage[ 1 ] ?? null);
+                Config::clearConfigsCacheOrCreate($manage[1] ?? null);
                 break;
             case 'route:cache':
-                CliRoute::clearRoutesCacheOrCreate($manage[ 1 ] ?? null);
+                CliRoute::clearRoutesCacheOrCreate($manage[1] ?? null);
                 break;
             case 'route:list':
                 CliRoute::list();
@@ -85,12 +82,7 @@ class Console
             case 'build':
             case 'prod':
             case 'production':
-                self::appDebugFalse();
-                $instance->keyGenerate();
-                (new LoadEnvVariables(App::getInstance()))->handle();
-                self::command('config:cache --create');
-                self::command('route:cache --create');
-                new PrintConsole('success', PHP_EOL.'Getting Application in Production :)'.PHP_EOL);
+                $instance->getProduction();
                 break;
             case 'create:controller':
             case 'create:model':
@@ -110,25 +102,14 @@ class Console
         }
     }
 
-
-
-    protected function startPhpDevelopmentServer(array $manage)
+    public function startPhpDevelopmentServer($port = 8000)
     {
-        if (isset($manage[ 1 ]) && is_numeric($manage[ 1 ])) {
-            $port = $manage[ 1 ];
-        } else {
-            $port = 8000;
-        }
-
+        $port = is_numeric($port) ? $port : 8000;
         new PrintConsole('green', "\nPhp Server Run <http://localhost:$port>\n");
-
-        exec('php -S localhost:' . $port . ' -t public/');
+        exec('php -S localhost:' . $port . ' -t ' . basename(public_path()));
     }
 
-
-
-
-    protected function clearViewCache()
+    public function clearViewCache()
     {
         foreach (glob(path('storage/cache/views/*')) as $file) {
             if (is_file($file)) {
@@ -142,83 +123,62 @@ class Console
         new PrintConsole('green', "\n\nCache files clear successfully \n\n");
     }
 
-
-    protected function keyGenerate()
+    public function keyGenerate()
     {
-        $app = App::get('app');
-
-        $envFile = $app->envFile();
-
+        $key = Str::random(60);
         try {
-            $file = fopen($envFile, 'rb+');
+            $this->envFileChangeFragment('APP_KEY', $key);
+            new PrintConsole('green', 'key:' . $key . "\n");
+        } catch (\Exception $e) {
+            new PrintConsole('error', $e->getMessage() . "\n");
+        }
+    }
 
-            while (($line = fgets($file, 4096)) !== false) {
-                if (strpos(trim($line), 'APP_KEY') === 0) {
-                    $replace = $line;
-                    break;
-                }
-            }
+    public function getProduction()
+    {
+        $this->appDebugFalse();
+        $this->keyGenerate();
+        call_user_func_array([
+            new LoadEnvVariables(App::getInstance()),
+            'handle'
+        ], []);
+        self::command('config:cache --create');
+        self::command('route:cache --create');
+        new PrintConsole('success', PHP_EOL . 'Getting Application in Production :)' . PHP_EOL);
+    }
 
-            fclose($file);
-
-            $content = \file_get_contents($envFile);
-
-            $key = base64_encode(openssl_random_pseudo_bytes(40));
-
-            $key = 'APP_KEY = ' . str_replace('=', '', $key) . "\n";
-
-            if (isset($replace)) {
-                $new_content = \preg_replace("/{$replace}/", $key, $content);
-                file_put_contents($envFile, $new_content);
-            } else {
-                file_put_contents($envFile, $key.FILE_APPEND);
-            }
-
-
-
-            if (file_exists($app->envCacheFile())) {
-                unlink($app->envCacheFile());
-            }
-
-            new PrintConsole('green', $key);
+    protected function appDebugFalse()
+    {
+        try {
+            $this->envFileChangeFragment('APP_DEBUG', 'FALSE');
         } catch (\Exception $e) {
             new PrintConsole('error', $e->getMessage() . "\n");
         }
     }
 
 
-    private static function appDebugFalse()
+    protected function envFileChangeFragment($fragment, $value)
     {
         $app = App::get('app');
 
-        $envFile = $app->envFile();
+        $content = file_get_contents($app->envFile());
 
-        try {
-            $file = fopen($envFile, 'rb+');
+        file_put_contents(
+            $app->envFile(),
+            preg_replace_callback('/{$fragment}\s?+.?=.*/',
+                function ($m) use ($value) {
+                    return $fragment . '=' . $key;
+                },
+                $content
+            )
 
-            while (($line = fgets($file, 4096)) !== false) {
-                if (strpos(trim($line), 'APP_DEBUG') === 0) {
-                    $replace = $line;
-                    break;
-                }
-            }
+        );
 
-            fclose($file);
-
-
-            $content = \file_get_contents($envFile);
-
-
-            $key = 'APP_DEBUG = ' . str_replace('=', '', 'FALSE') . "\n";
-
-            if (isset($replace)) {
-                $new_content = \preg_replace("/{$replace}/", $key, $content);
-                file_put_contents($envFile, $new_content);
-            } else {
-                file_put_contents($envFile, $key.FILE_APPEND);
-            }
-        } catch (\Exception $e) {
-            new PrintConsole('error', $e->getMessage() . "\n");
+        if (file_exists($app->envCacheFile())) {
+            unlink($app->envCacheFile());
         }
+
     }
+
+
 }

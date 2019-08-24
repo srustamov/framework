@@ -1,9 +1,9 @@
 <?php
 
 /**
-* @author  Samir Rustamov <rustemovv96@gmail.com>
-* @link    https://github.com/srustamov/TT
-*/
+ * @author  Samir Rustamov <rustemovv96@gmail.com>
+ * @link    https://github.com/srustamov/TT
+ */
 
 namespace TT\Engine\Cli;
 
@@ -15,18 +15,18 @@ class Create
 //        if(version_compare(PHP_VERSION, '7.3.0') >= 0) {
 //            //list($command, $name, &$subCommand) = $argv;
 //        } else {
-             @list($command, $name, $subCommand) = $argv;
+        @list($command, $name, $subCommand) = $argv;
 //        }
 
         list($create, $type) = explode(':', $command, 2);
 
         if (strlen($type) === 1) {
             $replace = [
-            'c' => 'controller',
-            'm' => 'model',
-            'f' => 'facade',
-            'r' => 'resource',
-          ];
+                'c' => 'controller',
+                'm' => 'model',
+                'f' => 'facade',
+                'r' => 'resource',
+            ];
             $type = $replace[strtolower($type)];
         }
 
@@ -48,7 +48,7 @@ class Create
         if (strpos($name, '/')) {
             $part = explode('/', $name);
             $name = array_pop($part);
-            $dir  = implode('/', $part);
+            $dir = implode('/', $part);
             $namespace .= '\\' . str_replace('/', '\\', $dir);
         }
 
@@ -59,18 +59,18 @@ class Create
             case 'Middleware':
                 if ($subCommand && strtolower($subCommand) === '-r') {
                     $content = str_replace(
-                        [ ':namespace' , ':name' ],
-                        [ $namespace , $name ],
+                        [':namespace', ':name'],
+                        [$namespace, $name],
                         file_get_contents(__DIR__ . '/resource/resource.mask')
-                     );
+                    );
                 } else {
                     $content = str_replace(
-                        [ ':namespace' , ':name' ],
-                        [ $namespace , $name ],
-                        file_get_contents(__DIR__ . '/resource/' .\strtolower($type).'.mask')
+                        [':namespace', ':name'],
+                        [$namespace, $name],
+                        file_get_contents(__DIR__ . '/resource/' . \strtolower($type) . '.mask')
                     );
                 }
-                $type .= ($type == 'Middleware') ?'':'s';
+                $type .= ($type == 'Middleware') ? '' : 's';
                 break;
             default:
                 new PrintConsole('error', "\nCreate {$type} name undefined. Please use type ['controller,model,middleware']\n\n");
@@ -78,8 +78,8 @@ class Create
         }
 
         if (!file_exists("app/{$type}/{$argv[1]}.php")) {
-            if (isset($dir) && !is_dir(app_path($type.'/'.$dir))) {
-                if (!mkdir(\app_path($type.'/'.$dir), 0777, true)) {
+            if (isset($dir) && !is_dir(app_path($type . '/' . $dir))) {
+                if (!mkdir(\app_path($type . '/' . $dir), 0777, true)) {
                     throw new \RuntimeException(sprintf('Directory "%s" was not created', app_path($dir)));
                 }
             }
@@ -97,10 +97,10 @@ class Create
 
     protected static function facade($name)
     {
-        if (!file_exists($file = path('system/Facades/'.ucfirst($name).'.php'))) {
+        if (!file_exists($file = path('system/Facades/' . ucfirst($name) . '.php'))) {
             $content = str_replace(
-                [':namespace',':name',':accessor'],
-                ['namespace TT\\Facades',ucfirst($name),strtolower($name)],
+                [':namespace', ':name', ':accessor'],
+                ['namespace TT\\Facades', ucfirst($name), strtolower($name)],
                 file_get_contents(__DIR__ . '/resource/facade.mask')
             );
 

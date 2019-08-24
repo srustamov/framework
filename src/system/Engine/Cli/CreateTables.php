@@ -59,6 +59,33 @@ class CreateTables
 
 
 
+    public static function cache()
+    {
+        try {
+            $table = Config::get('cache.database', ['table' => 'cache'])['table'] ?? 'cache';
+
+            $create = DB::exec("CREATE TABLE IF NOT EXISTS {$table}(
+                              `id` int(11) NOT NULL AUTO_INCREMENT,
+                              `cache_key` varchar(255) NOT NULL,
+                              `cache_value` longtext NOT NULL,
+                              `expires` int(20) NOT NULL DEFAULT '0',
+                               PRIMARY KEY (`id`),
+                               UNIQUE KEY `cache_key` (`cache_key`)
+                              ) DEFAULT CHARSET=utf8
+                      ") !== false;
+
+            if ($create) {
+                new PrintConsole('success', PHP_EOL . 'Create cache table successfully' . PHP_EOL)
+            } else {
+                new PrintConsole('error', PHP_EOL . 'Something went wrong' . PHP_EOL);
+            }
+        } catch (\PDOException $e) {
+            throw new \Exception("Create database $table table failed.<br />[".$e->getMessage()."]");
+        }
+    }
+
+
+
     private static function getSessionTableSql($table): string
     {
         return sprintf('CREATE TABLE IF NOT EXISTS %s (
@@ -73,20 +100,19 @@ class CreateTables
 
     private static function getUsersTableSql()
     {
-        return 'CREATE TABLE IF NOT EXISTS `admins` (
+        return 'CREATE TABLE IF NOT EXISTS `users` (
                     `id` int(11) NOT NULL AUTO_INCREMENT,
                     `name` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
                     `password` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
                     `email` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
                     `status` tinyint(1) NOT NULL DEFAULT \'1\',
                     `remember_token` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-                    `api_token` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
                     `forgotten_pass_code` varchar(100) COLLATE utf8_unicode_ci DEFAULT NULL,
                     `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (`id`),
-                    UNIQUE KEY `api_token` (`api_token`),
                     UNIQUE KEY `email` (`email`),
                     UNIQUE KEY `remember_token` (`remember_token`)
             )';
     }
+
 }

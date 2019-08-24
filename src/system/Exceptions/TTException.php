@@ -38,7 +38,14 @@ class TTException
 
         $date     = date('Y-m-d H:m:s');
 
-        $log_file = path('/storage/logs/errors/'.date('Y-m-d').'.log');
+        $path = path('storage/logs/errors/');
+
+        if(!is_dir($path)) {
+            if(!mkdir($path,0755,true)){
+                throw new \RuntimeException($path.' not found');
+            }
+        }
+        $log_file = rtrim($path,'/').'/'.date('Y-m-d').'.log';
 
         if (!file_exists($log_file)) {
             touch($log_file);

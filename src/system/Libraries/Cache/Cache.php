@@ -51,28 +51,6 @@ class Cache
     }
 
 
-    public function createDatabaseTable()
-    {
-        try {
-            $table = App::get('config')->get('cache.database', [])['table'] ?? 'cache';
-
-            $create = DB::exec("CREATE TABLE IF NOT EXISTS $table(
-                              `id` int(11) NOT NULL AUTO_INCREMENT,
-                              `cache_key` varchar(255) NOT NULL,
-                              `cache_value` longtext NOT NULL,
-                              `expires` int(20) NOT NULL DEFAULT '0',
-                               PRIMARY KEY (`id`),
-                               UNIQUE KEY `cache_key` (`cache_key`)
-                              ) DEFAULT CHARSET=utf8
-                      ") !== false;
-
-            return $create ? $this : false;
-        } catch (\PDOException $e) {
-            throw new \Exception("Create database $table table failed.<br />[".$e->getMessage()."]");
-        }
-    }
-
-
     public function put(String $key, $value, $expires = null)
     {
         return $this->adapter->put($key, $value, $expires);
