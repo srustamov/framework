@@ -1,184 +1,81 @@
 <?php namespace TT\Engine\Cli;
 
-/**
- * @author  Samir Rustamov <rustemovv96@gmail.com>
- * @link    https://github.com/srustamov/TT
- */
 
-use TT\Engine\App;
-use TT\Facades\Str;
-use TT\Engine\Cli\Route as CliRoute;
-use TT\Engine\LoadEnvVariables;
+
+use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
 
 class Console
 {
+    protected static $commands = [
+        Commands\Create\Middleware::class,
+        Commands\Create\Model::class,
+        Commands\Create\Controller::class,
+        Commands\Cache\Route::class,
+        Commands\Cache\Config::class,
+        Commands\Cache\View::class,
+        Commands\Table\Session::class,
+        Commands\Table\User::class,
+        Commands\Table\Cache::class,
+        Commands\RouteList::class,
+        Commands\KeyGenerate::class,
+        Commands\StartServer::class,
+        Commands\Production::class,
+    ];
 
+    private static $instance;
 
-    /**
-     * @param $command
-     * @param bool $shell
-     * @return null
-     */
-    public static function command($command, $shell = false)
+    protected static $app;
+
+    public static function setApplication(Application $app)
     {
-        if ($shell === true) {
-            return shell_exec($command);
-        }
+        self::$app = $app;
 
-        if (!is_array($command)) {
-            $command = explode(' ', $command);
-        }
-
-        static::run(array_merge(['manage'], array_filter($command)));
+        return self::getInstance();
     }
 
 
-    /**
-     * @param array $argv
-     */
-    public static function run(array $argv)
+    public static function setCommand(Command $command)
     {
-        $instance = new static();
+        self::$commands[] = $command;
 
-        if (isset($argv[1])) {
-            $manage = array_slice($argv, '1');
-        } else {
-            return PrintConsole::commandList();
-        }
-
-        PrintConsole::output();
-
-        switch (strtolower($manage[0])) {
-            case 'runserver':
-            case 'serve':
-            case 'start':
-            case 'run':
-                $instance->startPhpDevelopmentServer($manage);
-                break;
-            case 'session:table':
-                CreateTables::session($manage);
-                break;
-            case 'users:table':
-                CreateTables::users();
-                break;
-            case 'cache:table':
-                CreateTables::cache();;
-                break;
-            case 'view:cache':
-                $instance->clearViewCache();
-                break;
-            case 'config:cache':
-                Config::clearConfigsCacheOrCreate($manage[1] ?? null);
-                break;
-            case 'route:cache':
-                CliRoute::clearRoutesCacheOrCreate($manage[1] ?? null);
-                break;
-            case 'route:list':
-                CliRoute::list();
-                break;
-            case 'key:generate':
-                $instance->keyGenerate();
-                break;
-            case 'build':
-            case 'prod':
-            case 'production':
-                $instance->getProduction();
-                break;
-            case 'create:controller':
-            case 'create:model':
-            case 'create:middleware':
-            case 'create:resource':
-            case 'create:facade':
-            case 'c:middleware':
-            case 'c:c':
-            case 'c:m':
-            case 'c:r':
-            case 'c:f':
-                Create::execute($manage);
-                break;
-            default:
-                PrintConsole::commandList();
-                break;
-        }
+        return self::getInstance();
     }
 
-    public function startPhpDevelopmentServer($port = 8000)
-    {
-        $port = is_numeric($port) ? $port : 8000;
-        new PrintConsole('green', "\nPhp Server Run <http://localhost:$port>\n");
-        exec('php -S localhost:' . $port . ' -t ' . basename(public_path()));
-    }
 
-    public function clearViewCache()
+    public static function run()
     {
-        foreach (glob(path('storage/cache/views/*')) as $file) {
-            if (is_file($file)) {
-                if (unlink($file)) {
-                    echo "Delete: [{$file}]\n";
-                } else {
-                    new PrintConsole('error', 'Delete failed:[' . $file . ']');
-                }
+        $app = self::getApplication();
+        
+        foreach (self::$commands as $command)
+        {
+            if(is_string($command)) {
+                $app->add(new $command());
+            } else {
+                $app->add($command);
             }
         }
-        new PrintConsole('green', "\n\nCache files clear successfully \n\n");
-    }
 
-    public function keyGenerate()
-    {
-        $key = Str::random(60);
-        try {
-            $this->envFileChangeFragment('APP_KEY', $key);
-            new PrintConsole('green', 'key:' . $key . "\n");
-        } catch (\Exception $e) {
-            new PrintConsole('error', $e->getMessage() . "\n");
-        }
-    }
-
-    public function getProduction()
-    {
-        $this->appDebugFalse();
-        $this->keyGenerate();
-        call_user_func_array([
-            new LoadEnvVariables(App::getInstance()),
-            'handle'
-        ], []);
-        self::command('config:cache --create');
-        self::command('route:cache --create');
-        new PrintConsole('success', PHP_EOL . 'Getting Application in Production :)' . PHP_EOL);
-    }
-
-    protected function appDebugFalse()
-    {
-        try {
-            $this->envFileChangeFragment('APP_DEBUG', 'FALSE');
-        } catch (\Exception $e) {
-            new PrintConsole('error', $e->getMessage() . "\n");
-        }
+        return $app->run();
     }
 
 
-    protected function envFileChangeFragment($fragment, $value)
+    public static function getApplication()
     {
-        $app = App::get('app');
-
-        $content = file_get_contents($app->envFile());
-
-        file_put_contents(
-            $app->envFile(),
-            preg_replace_callback('/{$fragment}\s?+.?=.*/',
-                function ($m) use ($value) {
-                    return $fragment . '=' . $key;
-                },
-                $content
-            )
-
-        );
-
-        if (file_exists($app->envCacheFile())) {
-            unlink($app->envCacheFile());
+        if(self::$app === null){
+            self::$app = new Application();
         }
 
+        return self::$app;
     }
 
 
+    public static function getInstance()
+    {
+        if(self::$instance === null){
+            self::$instance = new static;
+        }
+
+        return self::$instance;
+    }
 }

@@ -172,7 +172,7 @@ class Cookie implements ArrayAccess
         if ($this->has($key)) {
             return $this->decrypt($_COOKIE[ $this->prefix . $key ], $key);
         }
-        return false;
+        return null;
     }
 
 

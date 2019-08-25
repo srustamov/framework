@@ -20,11 +20,11 @@ use TT\Engine\Http\Response;
 
 class App implements ArrayAccess
 {
-    public const VERSION = '1.1.4';
+    public const VERSION = '1.1';
 
     public static $classes = [];
 
-    protected $bootstrapping = false;
+    protected $boot = false;
 
     protected $middleware = [];
 
@@ -120,7 +120,7 @@ class App implements ArrayAccess
 
     public function isBoot(): bool
     {
-        return $this->bootstrapping;
+        return $this->boot;
     }
 
     protected function callImportantClasses(): void

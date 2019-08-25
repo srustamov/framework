@@ -17,6 +17,7 @@
     "predis/predis": "^1.1",
     "filp/whoops": "^2.4",
     "lcobucci/jwt": "^3.3",
+    "symfony/console": "^4.3",
     "ext-json": "*",
     "ext-pdo": "*",
     "ext-openssl": "*"
@@ -33,8 +34,5 @@
     ]
   },
   "minimum-stability": "dev",
-  "prefer-stable": true,
-  "require-dev": {
-    "symfony/var-dumper": "^4.3"
-  }
+  "prefer-stable": true
 }

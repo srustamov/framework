@@ -13,13 +13,13 @@ class :name extends Model
 {
 
    // default :names
-   protected $table;
+   //protected $table;
 
    // default [*]
-   protected $select;
+   //protected $select;
 
    /*
    * default Primary Key id
-   protected $primaryKey;
+   //protected $primaryKey;
    */
 }

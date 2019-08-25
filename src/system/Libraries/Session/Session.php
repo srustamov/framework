@@ -128,11 +128,11 @@ class Session implements ArrayAccess, Countable
 
     /**
      * @param $key
-     * @param bool $default
-     * @return bool
+     * @param null $default
+     * @return mixin
      */
 
-    public function get($key, $default = false)
+    public function get($key, $default = null)
     {
         if (isset($_SESSION[$key])) {
             return $_SESSION[$key];

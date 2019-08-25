@@ -142,6 +142,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     /**
      * @param array $credentials
      * @param bool $remember
+     * @param bool $once
      * @return bool
      * @throws Exception
      */

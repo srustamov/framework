@@ -31,10 +31,10 @@ class Cache
     {
         if ($adapter instanceof Adapter\CacheStoreInterface) {
             $this->adapter = $adapter;
-        } else {
+        } elseif(is_string($adapter)) {
             switch (strtolower($adapter)) {
-                case 'database':
-                    $this->adapter = new Adapter\DatabaseStore();
+                case 'file':
+                    $this->adapter = new Adapter\FileStore();
                     break;
                 case 'memcache':
                     $this->adapter = new Adapter\MemcacheStore();
@@ -42,10 +42,15 @@ class Cache
                 case 'redis':
                     $this->adapter = new Adapter\RedisStore();
                     break;
+                case 'databse':
+                    $this->adapter = new Adapter\DatabaseStore();
+                    break;
                 default:
-                    $this->adapter = new Adapter\FileStore();
+                    throw new \RuntimeException('Cache adapter not found');
                     break;
             }
+        } else{
+            throw new \RuntimeException('Cache adapter type inappropriate');
         }
         return $this;
     }
