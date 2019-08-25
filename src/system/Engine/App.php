@@ -111,7 +111,7 @@ class App implements ArrayAccess
 
             $this->setLocale();
 
-            $this->bootstrapping = true;
+            $this->boot = true;
         }
 
         return $this;
