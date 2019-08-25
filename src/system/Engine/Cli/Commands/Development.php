@@ -13,36 +13,33 @@ use TT\Engine\Cli\Helper;
 use TT\Engine\App;
 
 
-class Production extends Command
+class Development extends Command
 {
-    protected static $defaultName = 'production';
+    protected static $defaultName = 'development';
 
     protected function configure()
     {
         $this
-            ->setDescription('Switches the application to production mode')
-            ->setHelp('php manage production');
+            ->setDescription('Switches the application to development mode')
+            ->setHelp('php manage development');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
-    {   
-        $keyGenerate = $this->getApplication()->find('key:generate');
-        $keyGenerate->run(new ArrayInput([]),$output);
+    {
 
-        App::get('config')->set('app.debug',false);
+        App::get('config')->set('app.debug',true);
         $config = $this->getApplication()->find('config:cache');
-        $config->run(new ArrayInput(['--create'  => true,]),$output);
+        $config->run(new ArrayInput([]),$output);
 
         $route = $this->getApplication()->find('route:cache');
-        $route->run(new ArrayInput(['--create'  => true,]),$output);
+        $route->run(new ArrayInput([]),$output);
 
-        Helper::envFileChangeFragment('APP_DEBUG','FALSE');
+        Helper::envFileChangeFragment('APP_DEBUG','TRUE');
 
         $output->writeln(
-            "\n<fg=green;options=bold>Application in production :)</>\n"
+            "\n<fg=green;options=bold>Application in development!</>\n"
         );
     }
-
 
 
 }

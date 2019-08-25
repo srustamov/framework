@@ -20,9 +20,6 @@ class Config implements ArrayAccess, Countable
         $this->configurations = $configurations;
     }
 
-
-
-
     public function has($key)
     {
         if (strpos($key, '.') !== false) {

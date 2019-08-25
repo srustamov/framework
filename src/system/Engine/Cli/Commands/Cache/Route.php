@@ -41,6 +41,8 @@ class Route extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        App::getInstance()->routing();
+
         if ($input->getOption('create')) {
             $routes = App::get('route')->getRoutes();
             $this->content .= "<?php return [\n\n";
@@ -58,7 +60,7 @@ class Route extends Command
 
         } else {
             if (file_exists($this->file)) {
-                unlink($$this->file);
+                unlink($this->file);
             }
             $output->writeln(
                 '<fg=green>Routes cache clear successfully</>'

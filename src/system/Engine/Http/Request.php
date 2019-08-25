@@ -11,6 +11,7 @@ use function in_array;
 use Countable;
 use ArrayAccess;
 use Serializable;
+use JsonSerializable;
 use TT\Engine\App;
 
 /**
@@ -22,7 +23,7 @@ use TT\Engine\App;
  * @method map($callback)
  * @method filter($callback)
  */
-class Request implements ArrayAccess, Countable, Serializable
+class Request implements ArrayAccess, Countable, Serializable,JsonSerializable
 {
     /**@var Parameters */
     public $request = [];
@@ -163,7 +164,7 @@ class Request implements ArrayAccess, Countable, Serializable
     }
 
 
-    public function server($key = null, $default = null)
+    public function server(string $key = null, $default = null)
     {
         if ($key === null) {
             return $this->server;
@@ -172,13 +173,22 @@ class Request implements ArrayAccess, Countable, Serializable
     }
 
 
-    public function file($name)
+    public function header(string $name = null, $default = null)
     {
-        $this->files->get($name);
+        if ($key === null) {
+            return $this->headers;
+        }
+        return $this->headers->get($key, $default);
     }
 
 
-    public function method($default = 'GET'): String
+    public function file(string $name)
+    {
+        return $this->files->get($name);
+    }
+
+
+    public function method(string $default = 'GET'): String
     {
         if ($this->method === null) {
             $method = $this->server('request_method');
@@ -198,7 +208,7 @@ class Request implements ArrayAccess, Countable, Serializable
     }
 
 
-    public function isMethod($method)
+    public function isMethod(string $method)
     {
         return $this->method() === $method;
     }
@@ -389,5 +399,21 @@ class Request implements ArrayAccess, Countable, Serializable
     public function unSerialize($serialized)
     {
         unserialize($serialized);
+    }
+
+
+
+    /**
+     * Count elements of an object
+     * @link http://php.net/manual/en/countable.count.php
+     * @return array The custom count as an integer.
+     * </p>
+     * <p>
+     * The return value is cast to an integer.
+     * @since 5.1.0
+     */
+    public function jsonSerialize(): array
+    {
+        return $this->request->all();
     }
 }

@@ -26,6 +26,8 @@ class RouteList extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        App::getInstance()->routing();
+
         $routes = App::get('route')->getRoutes();
 
         $table = new Table($output);

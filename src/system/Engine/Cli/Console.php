@@ -21,6 +21,7 @@ class Console
         Commands\KeyGenerate::class,
         Commands\StartServer::class,
         Commands\Production::class,
+        Commands\Development::class,
     ];
 
     private static $instance;

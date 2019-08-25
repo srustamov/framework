@@ -6,6 +6,7 @@
  */
 
 
+use http\Exception\RuntimeException;
 use TT\Engine\Cli\PrintConsole;
 
 class TTException
@@ -15,7 +16,10 @@ class TTException
         $this->writeErrorLog($e);
 
         if (CONSOLE) {
-            return new PrintConsole('red', "\n File:".$e->getFile()."\n Line:".$e->getLine()."\n".$e->getMessage()."\n");
+             echo "Error:".$e->getMessage()."\n";
+             echo "File:".$e->getFile()."\n";
+             echo "Line:".$e->getLine()."\n";
+             exit;
         }
 
         return abort(500);

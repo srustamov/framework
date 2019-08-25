@@ -89,10 +89,18 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
-    public function map($callback)
+    public function map($callback,bool $use_key = false)
     {
-        foreach ($this->parameters as $key => $value) {
-            $this->parameters[$key] = $callback($value, $key);
+        if($use_key) {
+            $parameters = [];
+            foreach ($this->parameters as $key => $value) {
+                $parameters[$callback($value, $key)] = $value;
+            }
+            $this->parameters = $parameters;
+        } else {
+            foreach ($this->parameters as $key => $value) {
+                $this->parameters[$key] = $callback($value, $key);
+            }
         }
 
         return $this;

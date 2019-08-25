@@ -31,15 +31,16 @@ abstract class Controller
     /**
      * @throws \Exception
      */
-    protected function middleware()
+    protected function middleware($middleware)
     {
-        if (func_num_args()  > 0) {
-            $args = is_array(func_get_arg(0)) ? func_get_arg(0) : func_get_args();
-
-            foreach ($args as $extension) {
-                Middleware::init($extension);
+        $middleware = is_array($middleware) ? $middleware : [$middleware];
+        foreach ($middleware as $extension) {
+            list($name,$excepts,$guard) = Middleware::getExceptsAndGuard($extension);
+            if (isset($this->middlewareAliases[$name])) {
+                Middleware::init($name,$guard,$excepts );
             }
         }
+
     }
 
 

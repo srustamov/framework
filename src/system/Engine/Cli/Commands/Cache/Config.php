@@ -58,7 +58,7 @@ class Config extends Command
 
         } else {
             if (file_exists($this->file)) {
-                unlink($$this->file);
+                unlink($this->file);
             }
             $output->writeln(
                 '<fg=green>Configs cache clear successfully</>'
