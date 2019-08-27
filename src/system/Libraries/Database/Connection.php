@@ -31,7 +31,7 @@ abstract class Connection
     }
 
 
-    public function reconnect()
+    public function reconnect(bool $check = false)
     {
         if (!isset($this->connections[ $this->group ])) {
             $this->config[ $this->group ] = Config::get("database.$this->group");
@@ -47,11 +47,17 @@ abstract class Connection
                 $this->pdo->query("SET CHARACTER SET  " . $config[ 'charset' ]);
                 $this->pdo->query("SET NAMES " . $config[ 'charset' ]);
             } catch (PDOException $e) {
-                throw new DatabaseException($e->getMessage());
+                if($check) {
+                  return false;
+                }else {
+                  throw new DatabaseException($e->getMessage());
+                }
             }
         } else {
             $this->pdo = $this->connections[ $this->group ];
         }
+
+        return $this->pdo;
     }
 
 
@@ -80,6 +86,12 @@ abstract class Connection
         $this->reconnect();
 
         return $this;
+    }
+
+
+    public function check()
+    {
+      return $this->reconnect();
     }
 
 
