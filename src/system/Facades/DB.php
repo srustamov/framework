@@ -9,6 +9,7 @@
  * @method static first()
  * @method static get()
  * @method static exec(string $query)
+ * @method static check()
  */
 use TT\Engine\App;
 
@@ -21,6 +22,6 @@ class DB extends Facade
 
     public static function check()
     {
-      return App::get('database',true)->pdo;
+      return App::get('database',true)->pdo ?? false;
     }
 }
