@@ -34,7 +34,7 @@ class SessionAttemptDriver implements AttemptDriverInterface
 
     public function startLockTime($lockTime)
     {
-        Session::set('AUTH_ATTEMPT_EXPIRE_'.$this->guard, strtotime('+ {$lockTime} seconds'));
+        Session::set('AUTH_ATTEMPT_EXPIRE_'.$this->guard, strtotime("+ {$lockTime} seconds"));
     }
 
 

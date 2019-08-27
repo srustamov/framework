@@ -152,7 +152,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
             $this->setAttemptDriver();
             if (
                 ($attempts = $this->attemptDriver[$this->guard]->getAttemptsCountOrFail()) &&
-                $attempts->count >= $this->maxAttempts &&
+                $attempts->count >= $this->maxAttempts[$this->guard] &&
                 $seconds = $this->attemptDriver[$this->guard]->getRemainingSecondsOrFail()
             ) {
                 $this->message[$this->guard] = $this->getLockMessage($seconds);
@@ -349,25 +349,25 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     protected function convertTime($seconds): string
     {
-        $minute = '';
+      $minute = '';
 
-        $second = '';
+      $second = '';
 
-        if ($seconds >= 60) {
-            $m = (int)($seconds / 60);
+      if ($seconds >= 60) {
+          $m = (int) ($seconds / 60);
 
-            $minute .= sprintf(' %s', lang('auth.many_attempts.minute' . ($m > 1 ? 's' : ''))) . ' ';
+          $minute .= sprintf("$m %s", lang('auth.many_attempts.minute' . ($m > 1 ? 's' : '') )) . ' ';
 
-            if ($seconds % 60 > 0) {
-                $s = ($seconds % 60);
+          if ($seconds % 60 > 0) {
+              $s = ($seconds % 60);
 
-                $second .= sprintf(' %s', lang('auth.many_attempts.second' . ($s > 1 ? 's' : ''))) . ' ';
-            }
-        } else {
-            $second .= sprintf(' %s', lang('auth.many_attempts.second' . ($seconds > 1 ? 's' : ''))) . ' ';
-        }
+              $second .= sprintf("$s %s", lang('auth.many_attempts.second' . ($s > 1 ? 's' : ''))) . ' ';
+          }
+      } else {
+          $second .= sprintf("$seconds %s", lang('auth.many_attempts.second' . ($seconds > 1 ? 's' : ''))) . ' ';
+      }
 
-        return $minute . $second;
+      return $minute . $second;
     }
 
 

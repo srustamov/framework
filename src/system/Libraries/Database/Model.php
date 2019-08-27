@@ -79,8 +79,6 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
                 $return = static::create($this->getAttributes());
             }
 
-            $this->setAttributes([]);
-
             return $return;
         }
         return false;

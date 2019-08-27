@@ -28,6 +28,7 @@ class Development extends Command
     {
 
         App::get('config')->set('app.debug',true);
+
         $config = $this->getApplication()->find('config:cache');
         $config->run(new ArrayInput([]),$output);
 
