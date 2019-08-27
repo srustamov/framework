@@ -19,15 +19,15 @@ abstract class Connection
 
     protected $config = [];
 
-    /**@var PDO*/
-    protected $pdo;
-
     protected $group = 'default';
 
+    /**@var PDO*/
+    public $pdo;
 
-    public function __construct()
+
+    public function __construct(bool $check = false)
     {
-        $this->reconnect();
+        $this->reconnect($check);
     }
 
 
@@ -87,13 +87,6 @@ abstract class Connection
 
         return $this;
     }
-
-
-    public function check()
-    {
-      return $this->reconnect();
-    }
-
 
     /**
      * Database connection close;

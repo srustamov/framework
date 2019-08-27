@@ -10,12 +10,17 @@
  * @method static get()
  * @method static exec(string $query)
  */
-
+use TT\Engine\App;
 
 class DB extends Facade
 {
     protected static function getFacadeAccessor()
     {
         return 'database';
+    }
+
+    public static function check()
+    {
+      return App::get('database',true)->pdo;
     }
 }
