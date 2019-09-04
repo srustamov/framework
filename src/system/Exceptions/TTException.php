@@ -40,7 +40,7 @@ class TTException
 
         $message = $e->getMessage();
 
-        $date     = date('Y-m-d H:m:s');
+        $date    = date('Y-m-d H:m:s');
 
         $path = path('storage/logs/errors/');
 
@@ -49,6 +49,7 @@ class TTException
                 throw new \RuntimeException($path.' not found');
             }
         }
+
         $log_file = rtrim($path, '/').'/'.date('Y-m-d').'.log';
 
         if (!file_exists($log_file)) {

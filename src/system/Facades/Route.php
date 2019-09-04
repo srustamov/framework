@@ -4,8 +4,9 @@
  * @package	TT
  * @author  Samir Rustamov <rustemovv96@gmail.com>
  * @link https://github.com/srustamov/TT
- * @method static execute(array $routeMiddleware = [])
+ * @method static importRouteFiles(array $files)
  * @method static getRoutes()
+ * @method static setRoutes(array $routes)
  * @method static getName($name, array $parameters)
  * @method static get($path, $handler): self
  * @method static post($path, $handler): self

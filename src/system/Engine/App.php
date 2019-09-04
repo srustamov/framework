@@ -13,7 +13,6 @@ use ArrayAccess;
 use Closure;
 use Exception;
 use RuntimeException;
-use TT\Libraries\Benchmark\Benchmark;
 use TT\Engine\Http\Middleware;
 use TT\Engine\Http\Request;
 use TT\Engine\Http\Response;
@@ -83,7 +82,7 @@ class App implements ArrayAccess
 
         chdir($this->paths['base']);
 
-        static::$instance = $this;
+        static::$instance = self::$classes['app'] = $this;
 
         return $this;
     }
@@ -102,8 +101,6 @@ class App implements ArrayAccess
             self::register('request', new Request($this));
 
             $this->callImportantClasses();
-
-            self::register('app', $this);
 
             $this->setAliases();
 
@@ -177,7 +174,19 @@ class App implements ArrayAccess
      */
     public function routing(): Response
     {
-        return self::get('route')->execute($this->routeMiddleware);
+        /**@var $route Http\Routing\Route */
+        $route = self::get('route');
+
+        $route->setMiddlewareAliases($this->routeMiddleware);
+
+        if (file_exists($file = $this->routesCacheFile())) {
+            $route->setRoutes(require $file);
+        } else {
+            $route->importRouteFiles(
+                glob($this->path('routes') . '/*')
+            );
+        }
+        return CONSOLE ? self::get('response') : $route->run();
     }
 
 
@@ -189,15 +198,11 @@ class App implements ArrayAccess
      */
     public function benchmark($finish)
     {
-        if (!(
-            CONSOLE ||
+        if (!(CONSOLE ||
             !self::get('config')->get('app.debug') ||
             self::get('http')->isAjax() ||
-            self::get('request')->isJson()
-        )) {
-            $benchmark = new Benchmark($this);
-            self::register('benchmark', $benchmark);
-            return $benchmark->table($finish);
+            self::get('request')->isJson())) {
+            return self::get('benchmark')->table($finish);
         }
         return null;
     }
@@ -269,7 +274,6 @@ class App implements ArrayAccess
             . ltrim($path, DIRECTORY_SEPARATOR);
     }
 
-
     public function langPath($path = ''): string
     {
         return $this->path($this->paths['lang'] . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR));
@@ -290,13 +294,14 @@ class App implements ArrayAccess
         return $this->path($this->paths['envCacheFile']);
     }
 
-
     public function classes(String $name = null, Bool $isValue = false)
     {
+
         $classes = array(
-            'app' => static::class,
+            'app' => "TT\Engine\App",
             'array' => 'TT\Libraries\Arr',
             'authentication' => 'TT\Libraries\Auth\Authentication',
+            'benchmark' => 'TT\Libraries\Benchmark\Benchmark',
             'cache' => 'TT\Libraries\Cache\Cache',
             'console' => 'TT\Engine\Cli\Console',
             'cookie' => 'TT\Libraries\Cookie',
@@ -348,35 +353,29 @@ class App implements ArrayAccess
         if (isset(static::$classes[$class])) {
             return static::$classes[$class];
         }
-
         if ($instance = self::getInstance()->classes($class)) {
             if (method_exists($instance, '__construct')) {
                 $args = Reflections::classMethodParameters($instance, '__construct', $args);
             }
-
             static::$classes[$class] = new $instance(...$args);
-
             return static::$classes[$class];
         }
-
         if (strpos($class, '\\')) {
             if ($instance = self::getInstance()->classes($class, true)) {
                 return static::get($instance, ...$args);
             }
 
-            $instance = new $class(Reflections::classMethodParameters($class, '__construct', $args));
-
-
-            static::$classes[$class] = $instance;
-
-            unset($instance);
+            static::$classes[$class] = new $class(Reflections::classMethodParameters($class, '__construct', $args));
 
             return static::$classes[$class];
         }
         throw new RuntimeException('Class not found [' . $class . ']');
     }
 
-
+    /**
+     * @param $className
+     * @param $object
+     */
     public static function register($className, $object): void
     {
         if ($object instanceof Closure) {
