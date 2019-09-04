@@ -33,7 +33,7 @@ trait RouteGroup
      */
     private function prepareGroupParameters($group_parameters)
     {
-        if(is_string($group_parameters)) {
+        if (is_string($group_parameters)) {
             $prefix = $group_parameters;
             $this->prefix .= trim($prefix);
 

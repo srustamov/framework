@@ -47,10 +47,10 @@ abstract class Connection
                 $this->pdo->query("SET CHARACTER SET  " . $config[ 'charset' ]);
                 $this->pdo->query("SET NAMES " . $config[ 'charset' ]);
             } catch (PDOException $e) {
-                if($check) {
-                  return false;
-                }else {
-                  throw new DatabaseException($e->getMessage());
+                if ($check) {
+                    return false;
+                } else {
+                    throw new DatabaseException($e->getMessage());
                 }
             }
         } else {

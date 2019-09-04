@@ -21,10 +21,9 @@ class Reflections
 
         foreach ($pParameters as $num => $param) {
             if ($param->getClass()) {
-                if(!$param->isDefaultValueAvailable()) {
+                if (!$param->isDefaultValueAvailable()) {
                     $args[$num] = App::get($param->getClass()->name);
                 }
-               
             }
         }
         return $args;

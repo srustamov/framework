@@ -98,7 +98,6 @@ class Database extends Connection
                 return $first ? $statement->fetch($fetch) : $statement->fetchAll($fetch);
             }
             return null;
-
         } catch (\PDOException $e) {
             throw new DatabaseException($e->getMessage(), $queryString);
         }

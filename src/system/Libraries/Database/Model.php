@@ -10,9 +10,10 @@
 use RuntimeException;
 use TT\Facades\DB;
 use TT\Libraries\Arr;
-use ArrayAccess, JsonSerializable, Countable;
+use ArrayAccess;
+use JsonSerializable;
+use Countable;
 use App\Exceptions\ModelNotFoundException;
-
 
 abstract class Model implements ArrayAccess, JsonSerializable, Countable
 {
@@ -51,13 +52,12 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         }
 
         self::$models[static::class] = $model;
-
     }
 
 
     protected function isBooted(): bool
     {
-      return isset(self::$models[static::class]);
+        return isset(self::$models[static::class]);
     }
 
 
@@ -140,7 +140,6 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         self::getInstance()->setAttributes((array)$result);
 
         return self::getInstance();
-
     }
 
 
@@ -213,12 +212,12 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
 
     public function getAttribute($name)
     {
-      return self::getInstance()->attributes[$name] ?? null;
+        return self::getInstance()->attributes[$name] ?? null;
     }
 
-    public function setAttribute($name,$value)
+    public function setAttribute($name, $value)
     {
-      self::getInstance()->attributes[$name] = $value;
+        self::getInstance()->attributes[$name] = $value;
     }
 
     public function setAttributes(array $attributes)
@@ -270,7 +269,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function __set($column, $value)
     {
-        $this->setAttribute($column,$value);
+        $this->setAttribute($column, $value);
     }
 
     public function __isset($name)
@@ -316,7 +315,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function offsetSet($offset, $value)
     {
-        $this->setAttribute($offset,$value);
+        $this->setAttribute($offset, $value);
     }
 
     /**

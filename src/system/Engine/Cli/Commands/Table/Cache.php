@@ -3,8 +3,6 @@
 
 namespace TT\Engine\Cli\Commands\Table;
 
-
-
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -14,7 +12,6 @@ use TT\Engine\App;
 
 class Cache extends Command
 {
-
     protected static $defaultName = 'cache:table';
 
 
@@ -34,8 +31,8 @@ class Cache extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $table = $input->getOption('table') ?? 
-                 App::get('config')->get('cache.database.table','cache');
+        $table = $input->getOption('table') ??
+                 App::get('config')->get('cache.database.table', 'cache');
         
         try {
             App::get('database')->exec($this->getSql($table));
@@ -47,10 +44,7 @@ class Cache extends Command
             } else {
                 $output->writeln("<fg=red>{$e->getmessage()}</>");
             }
-
         }
-
-
     }
 
 
@@ -65,6 +59,6 @@ class Cache extends Command
                     PRIMARY KEY (`id`),
                     UNIQUE KEY `cache_key` (`cache_key`)
                     ) DEFAULT CHARSET=utf8
-                ",$table);
+                ", $table);
     }
 }

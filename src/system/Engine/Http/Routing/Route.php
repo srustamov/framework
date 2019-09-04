@@ -62,6 +62,22 @@ class Route
     private $app;
 
 
+    public function __construct(App $app)
+    {
+        $this->app = $app;
+    }
+
+
+    public function setMiddlewareAliases($aliases = [])
+    {
+        $aliases = is_array($aliases) ? $aliases : [$aliases];
+
+        $this->middlewareAliases = $aliases;
+
+        return $this;
+    }
+
+
     /**
      * @param String $namespace
      */
@@ -84,14 +100,14 @@ class Route
                 $domain = str_replace(['https://','http://'], '', $domain);
             }
 
-            $this->domain = $this->app::get('url')->scheme().'://'.$domain;
+            $this->domain = $this->app->get('url')->scheme().'://'.$domain;
 
             return $this;
         }
 
         $domain =  $this->domain !== null
             ? $this->domain
-            : $this->app::get('url')->base();
+            : $this->app->get('url')->base();
 
         return rtrim($domain, '/');
     }
@@ -148,9 +164,9 @@ class Route
      * @throws NotFoundException
      * @throws Exception
      */
-    protected function run()
+    public function run()
     {
-        $requestUri = trim($this->app::get('url')->current(), '/');
+        $requestUri = trim($this->app->get('url')->current(), '/');
 
         $method     = $this->getRequestMethod();
 
@@ -190,7 +206,11 @@ class Route
 
             throw new RouteException('Route Handler type undefined');
         }
-        throw new NotFoundException;
+        if(class_exists('NotFoundException')) {
+            throw new NotFoundException;
+        }
+
+        abort(404);
     }
 
 
@@ -233,9 +253,13 @@ class Route
                 return $content;
             }
             return $this->app::get('response')->setContent($content);
-        } else {
+        }
+
+        if(class_exists('NotFoundException')) {
             throw new NotFoundException;
         }
+
+        abort(404);
     }
 
 
@@ -411,19 +435,28 @@ class Route
      * @throws RouteException
      * @throws Exception
      */
-    public function execute(App $app, $routeMiddleware = []):Response
+    public function execute($routeMiddleware = []):Response
     {
-        $this->app = $app;
-        $this->middlewareAliases = $routeMiddleware;
+        $this->middlewareAliases = array_merge($routeMiddleware, $this->middlewareAliases);
 
-        if (file_exists($file = $app->routesCacheFile())) {
+        if (file_exists($file = $this->app->routesCacheFile())) {
             $this->routes = require $file;
         } else {
-            foreach (glob($app->path('routes').'/*') as $file) {
+            foreach (glob($this->app->path('routes').'/*') as $file) {
                 require_once $file;
             }
         }
 
         return !CONSOLE ? $this->run() : $this->app::get('response');
+    }
+
+
+    public function flush()
+    {
+        $route  = new Route($this->app);
+
+        $this->app->register('route',$route);
+
+        return $route;
     }
 }

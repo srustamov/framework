@@ -50,10 +50,7 @@ class Url
      */
     public function scheme(): string
     {
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS']  !== 'off') {
-            return 'https';
-        }
-        return 'http';
+        return $this->secure() ? 'https' : 'http';
     }
 
 

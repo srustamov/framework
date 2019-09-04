@@ -75,5 +75,4 @@ class DatabaseAttemptDriver implements AttemptDriverInterface
 
         return false;
     }
-
 }

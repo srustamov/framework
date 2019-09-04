@@ -18,8 +18,7 @@ use TT\Facades\Cookie;
 use TT\Facades\Config;
 use TT\Facades\Hash;
 
-
-class Authentication implements \ArrayAccess,\JsonSerializable
+class Authentication implements \ArrayAccess, \JsonSerializable
 {
     protected $message;
 
@@ -62,22 +61,22 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     {
         $guard = $guard ?? $this->guard;
 
-        if(!isset($this->booted[$guard])) {
+        if (!isset($this->booted[$guard])) {
             $config = $this->config[$guard];
-            if(class_exists($config['model'])) {
+            if (class_exists($config['model'])) {
                 $this->model[$guard] = new $config['model']();
-                if(!($this->model[$guard] instanceof Model)) {
+                if (!($this->model[$guard] instanceof Model)) {
                     throw new RuntimeException('Authentication model not instance Database\Model');
                 }
             } else {
-                throw new RuntimeException(sprintf('Authentication model[%s] not found',$config['model']));
+                throw new RuntimeException(sprintf('Authentication model[%s] not found', $config['model']));
             }
 
             $this->throttle[$guard] = $config['throttle']['enable'] ?? false;
 
             $this->passwordName[$guard] = $config['password_name'] ?? 'password';
 
-            if($this->throttle[$guard]) {
+            if ($this->throttle[$guard]) {
                 $this->attemptDriverName[$guard] = $config['throttle']['driver'];
                 $this->maxAttempts[$guard] = $config['throttle']['max_attempts'];
                 $this->lockTime[$guard] = $config['throttle']['lock_time'];
@@ -99,13 +98,13 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     }
 
 
-    protected function beforeLogin(Model $user,$guard): Bool
+    protected function beforeLogin(Model $user, $guard): Bool
     {
         return true;
     }
 
 
-    protected function afterLogin(Model $user,$guard)
+    protected function afterLogin(Model $user, $guard)
     {
         //return true;
     }
@@ -120,7 +119,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     {
         $guard = $guard ?? $this->guard;
 
-        if($user !== null) {
+        if ($user !== null) {
             $this->user[$guard] = $user;
         }
         if (!$this->user[$guard]) {
@@ -146,9 +145,9 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      * @return bool
      * @throws Exception
      */
-    public function attempt(array $credentials, $remember = false,$once = false): bool
+    public function attempt(array $credentials, $remember = false, $once = false): bool
     {
-        if($this->throttle[$this->guard]) {
+        if ($this->throttle[$this->guard]) {
             $this->setAttemptDriver();
             if (
                 ($attempts = $this->attemptDriver[$this->guard]->getAttemptsCountOrFail()) &&
@@ -169,23 +168,23 @@ class Authentication implements \ArrayAccess,\JsonSerializable
 
         if ($user = $this->model[$this->guard]->find($credentials)) {
             if (Hash::check($password, $user->password)) {
-                if($this->throttle[$this->guard]) {
+                if ($this->throttle[$this->guard]) {
                     $this->attemptDriver[$this->guard]->deleteAttempt();
                 }
                 if ($remember) {
                     $this->setRemember($user);
                 }
-                if ($this->beforeLogin($user,$this->guard)) {
+                if ($this->beforeLogin($user, $this->guard)) {
                     if (!$once) {
                         $this->setSession($user);
                     }
-                    $this->afterLogin($user,$this->guard);
+                    $this->afterLogin($user, $this->guard);
                     return true;
                 }
                 return false;
             }
         }
-        if($this->throttle[$this->guard]) {
+        if ($this->throttle[$this->guard]) {
             $this->attemptDriver[$this->guard]->increment();
             $remaining = $this->maxAttempts[$this->guard] - $this->attemptDriver[$this->guard]->getAttemptsCountOrFail()->count;
             if ($remaining === 0) {
@@ -201,7 +200,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
 
     public function once(array $credentials)
     {
-        return $this->attempt($credentials,false,true);
+        return $this->attempt($credentials, false, true);
     }
 
 
@@ -211,7 +210,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     public function check(): bool
     {
-        if($this->user[$this->guard] instanceof  Model) {
+        if ($this->user[$this->guard] instanceof  Model) {
             return true;
         }
 
@@ -226,7 +225,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
         }
 
         if ($user = $this->remember()) {
-            if ($this->beforeLogin($user,$this->guard)) {
+            if ($this->beforeLogin($user, $this->guard)) {
                 $this->setSession($user);
                 $this->user[$this->guard] = $user;
                 return true;
@@ -320,8 +319,8 @@ class Authentication implements \ArrayAccess,\JsonSerializable
     protected function getFailMessage($remaining = null)
     {
         $message =  lang('auth.incorrect');
-        if($remaining !== null) {
-            $message .= lang('auth.remaining',array('remaining' => $remaining));
+        if ($remaining !== null) {
+            $message .= lang('auth.remaining', array('remaining' => $remaining));
         }
         return $message;
     }
@@ -349,25 +348,25 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     protected function convertTime($seconds): string
     {
-      $minute = '';
+        $minute = '';
 
-      $second = '';
+        $second = '';
 
-      if ($seconds >= 60) {
-          $m = (int) ($seconds / 60);
+        if ($seconds >= 60) {
+            $m = (int) ($seconds / 60);
 
-          $minute .= sprintf("$m %s", lang('auth.many_attempts.minute' . ($m > 1 ? 's' : '') )) . ' ';
+            $minute .= sprintf("$m %s", lang('auth.many_attempts.minute' . ($m > 1 ? 's' : ''))) . ' ';
 
-          if ($seconds % 60 > 0) {
-              $s = ($seconds % 60);
+            if ($seconds % 60 > 0) {
+                $s = ($seconds % 60);
 
-              $second .= sprintf("$s %s", lang('auth.many_attempts.second' . ($s > 1 ? 's' : ''))) . ' ';
-          }
-      } else {
-          $second .= sprintf("$seconds %s", lang('auth.many_attempts.second' . ($seconds > 1 ? 's' : ''))) . ' ';
-      }
+                $second .= sprintf("$s %s", lang('auth.many_attempts.second' . ($s > 1 ? 's' : ''))) . ' ';
+            }
+        } else {
+            $second .= sprintf("$seconds %s", lang('auth.many_attempts.second' . ($seconds > 1 ? 's' : ''))) . ' ';
+        }
 
-      return $minute . $second;
+        return $minute . $second;
     }
 
 
@@ -432,8 +431,8 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     public function offsetExists($offset): bool
     {
-        if($this->check()) {
-            return array_key_exists($offset,$this->user[$this->guard]);
+        if ($this->check()) {
+            return array_key_exists($offset, $this->user[$this->guard]);
         }
         return false;
     }
@@ -449,7 +448,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     public function offsetGet($offset)
     {
-        if($this->check()) {
+        if ($this->check()) {
             return $this->user[$this->guard][$offset];
         }
         return null;
@@ -469,7 +468,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     public function offsetSet($offset, $value)
     {
-        if($this->check()) {
+        if ($this->check()) {
             $this->user[$this->guard][$offset] = $value;
         }
     }
@@ -485,7 +484,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     public function offsetUnset($offset)
     {
-        if($this->check()) {
+        if ($this->check()) {
             unset($this->user[$this->guard][$offset]);
         }
     }
@@ -500,7 +499,7 @@ class Authentication implements \ArrayAccess,\JsonSerializable
      */
     public function jsonSerialize()
     {
-        if($this->check()) {
+        if ($this->check()) {
             return json_encode($this->user());
         }
     }

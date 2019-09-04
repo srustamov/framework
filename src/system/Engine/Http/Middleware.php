@@ -22,7 +22,7 @@ class Middleware
      * @throws \Exception
      */
 
-    public static function init($class, string $guard = 'default',$excepts = [])
+    public static function init($class, string $guard = 'default', $excepts = [])
     {
         $request  = App::get('request');
 
@@ -38,12 +38,11 @@ class Middleware
             }
         };
 
-        $response = call_user_func([new $class(), 'handle'], $request, $next,$guard);
+        $response = call_user_func([new $class(), 'handle'], $request, $next, $guard);
 
         if (!App::isInstance($response, 'response')) {
             App::get('response')->setContent($response)->send();
         }
-
     }
 
 
@@ -65,12 +64,11 @@ class Middleware
             $excepts = explode(',', $excepts);
         }
 
-        if(strpos($name, ':')) {
+        if (strpos($name, ':')) {
             list($name, $guard) = explode(':', $extension, 2);
         }
 
 
         return array($name,$excepts,$guard);
     }
-
 }

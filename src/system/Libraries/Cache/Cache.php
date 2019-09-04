@@ -31,7 +31,7 @@ class Cache
     {
         if ($adapter instanceof Adapter\CacheStoreInterface) {
             $this->adapter = $adapter;
-        } elseif(is_string($adapter)) {
+        } elseif (is_string($adapter)) {
             switch (strtolower($adapter)) {
                 case 'file':
                     $this->adapter = new Adapter\FileStore();
@@ -49,7 +49,7 @@ class Cache
                     throw new \RuntimeException('Cache adapter not found');
                     break;
             }
-        } else{
+        } else {
             throw new \RuntimeException('Cache adapter type inappropriate');
         }
         return $this;

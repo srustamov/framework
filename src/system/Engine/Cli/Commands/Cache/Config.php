@@ -55,7 +55,6 @@ class Config extends Command
                     '<fg=green>Configs cached error</>'
                 );
             }
-
         } else {
             if (file_exists($this->file)) {
                 unlink($this->file);
@@ -64,7 +63,6 @@ class Config extends Command
                 '<fg=green>Configs cache clear successfully</>'
             );
         }
-
     }
 
 
@@ -95,8 +93,5 @@ class Config extends Command
                 }
             }
         }
-
     }
-
-
 }

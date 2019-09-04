@@ -4,7 +4,7 @@
  * @package	TT
  * @author  Samir Rustamov <rustemovv96@gmail.com>
  * @link https://github.com/srustamov/TT
- * @method static execute(\TT\Engine\App $param, array $routeMiddleware)
+ * @method static execute(array $routeMiddleware = [])
  * @method static getRoutes()
  * @method static getName($name, array $parameters)
  * @method static get($path, $handler): self
@@ -19,6 +19,8 @@
  * @method static group($group_parameters, \Closure $callback)
  * @method static name($name): self
  * @method static pattern($pattern): self
+ * @method static run()
+ * @method static flush()
  */
 
 

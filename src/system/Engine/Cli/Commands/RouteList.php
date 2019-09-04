@@ -10,7 +10,6 @@ use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
 use TT\Engine\App;
 
-
 class RouteList extends Command
 {
     protected static $defaultName = 'route:list';
@@ -38,14 +37,16 @@ class RouteList extends Command
 
         $rows = [];
         foreach ($routes as $method => $parameters) {
-            if($method === 'NAMES') continue;
+            if ($method === 'NAMES') {
+                continue;
+            }
             foreach ($parameters as $param) {
-               $rows[] = [
+                $rows[] = [
                    $method,
                    $param['path'],
                    $param['handler'],
                    $param['ajax'] ? 'true' : 'false',
-                   implode(',',$param['middleware']),
+                   implode(',', $param['middleware']),
                    $this->showPattern($param['pattern']),
                 ];
                 $rows[] = new TableSeparator();
@@ -62,18 +63,14 @@ class RouteList extends Command
     {
         $return  = '';
 
-        if(empty($pattern)) {
+        if (empty($pattern)) {
             return $return;
         }
 
-        foreach($pattern as $key => $value)
-        {
+        foreach ($pattern as $key => $value) {
             $return .= $key.':'.$value."\n";
         }
 
         return $return;
     }
-
-
-
 }

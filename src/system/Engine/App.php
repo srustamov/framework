@@ -76,7 +76,7 @@ class App implements ArrayAccess
         }
 
         if ($basePath === null) {
-            $this->paths['base'] = dirname(__DIR__, 2);
+            $this->paths['base'] = dirname(__DIR__, 4);
         } else {
             $this->paths['base'] = rtrim($basePath, DIRECTORY_SEPARATOR);
         }
@@ -177,7 +177,7 @@ class App implements ArrayAccess
      */
     public function routing(): Response
     {
-        return self::get('route')->execute($this, $this->routeMiddleware);
+        return self::get('route')->execute($this->routeMiddleware);
     }
 
 
@@ -294,6 +294,7 @@ class App implements ArrayAccess
     public function classes(String $name = null, Bool $isValue = false)
     {
         $classes = array(
+            'app' => static::class,
             'array' => 'TT\Libraries\Arr',
             'authentication' => 'TT\Libraries\Auth\Authentication',
             'cache' => 'TT\Libraries\Cache\Cache',

@@ -11,7 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class StartServer extends Command
 {
-
     protected static $defaultName = 'server:start';
 
     protected function configure()

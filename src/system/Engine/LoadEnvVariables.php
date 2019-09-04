@@ -11,7 +11,9 @@ class LoadEnvVariables
 
     public function handle()
     {
-        $this->prepareEnv();
+        if(file_exists($this->app->envFile())) {
+            $this->prepareEnv();
+        }
     }
 
     private function setEnv($data)

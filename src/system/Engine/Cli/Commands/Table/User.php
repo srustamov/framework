@@ -3,8 +3,6 @@
 
 namespace TT\Engine\Cli\Commands\Table;
 
-
-
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -14,7 +12,6 @@ use TT\Engine\App;
 
 class User extends Command
 {
-
     protected static $defaultName = 'users:table';
 
 
@@ -46,10 +43,7 @@ class User extends Command
             } else {
                 $output->writeln("<fg=red>{$e->getmessage()}</>");
             }
-
         }
-
-
     }
 
 
@@ -68,6 +62,6 @@ class User extends Command
                         PRIMARY KEY (`id`),
                         UNIQUE KEY `email` (`email`),
                         UNIQUE KEY `remember_token` (`remember_token`)
-                )',$table);
+                )', $table);
     }
 }

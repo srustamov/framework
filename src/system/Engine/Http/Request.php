@@ -23,7 +23,7 @@ use TT\Engine\App;
  * @method map($callback)
  * @method filter($callback)
  */
-class Request implements ArrayAccess, Countable, Serializable,JsonSerializable
+class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
 {
     /**@var Parameters */
     public $request = [];

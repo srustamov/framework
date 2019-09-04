@@ -16,10 +16,10 @@ class TTException
         $this->writeErrorLog($e);
 
         if (CONSOLE) {
-             echo "Error:".$e->getMessage()."\n";
-             echo "File:".$e->getFile()."\n";
-             echo "Line:".$e->getLine()."\n";
-             exit;
+            echo "Error:".$e->getMessage()."\n";
+            echo "File:".$e->getFile()."\n";
+            echo "Line:".$e->getLine()."\n";
+            exit;
         }
 
         return abort(500);
@@ -44,12 +44,12 @@ class TTException
 
         $path = path('storage/logs/errors/');
 
-        if(!is_dir($path)) {
-            if(!mkdir($path,0755,true)){
+        if (!is_dir($path)) {
+            if (!mkdir($path, 0755, true)) {
                 throw new \RuntimeException($path.' not found');
             }
         }
-        $log_file = rtrim($path,'/').'/'.date('Y-m-d').'.log';
+        $log_file = rtrim($path, '/').'/'.date('Y-m-d').'.log';
 
         if (!file_exists($log_file)) {
             touch($log_file);

@@ -3,8 +3,6 @@
 
 namespace TT\Engine\Cli\Commands\Create;
 
-
-
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -13,7 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Controller extends Command
 {
-
     protected static $defaultName = 'create:controller';
 
     private $namespace = 'App\Controllers';
@@ -45,27 +42,26 @@ class Controller extends Command
     {
         $resource = $input->getOption('resource');
 
-        $name = $path = trim($input->getArgument('name'),'/');
+        $name = $path = trim($input->getArgument('name'), '/');
 
         $file = app_path($this->directory.'/'.$path.'.php');
 
-        if(file_exists($file)){
+        if (file_exists($file)) {
             return $output->writeln('<fg=red>The Controller was already created</>');
         }
 
-        if(strpos($path,'/') !== false) {
-
-            $part = explode('/',$path);
+        if (strpos($path, '/') !== false) {
+            $part = explode('/', $path);
 
             $name = array_pop($part);
 
-            $this->namespace .= '\\'.implode('\\',$part);
+            $this->namespace .= '\\'.implode('\\', $part);
 
-            $this->directory .= '/'.implode('/',$part);
+            $this->directory .= '/'.implode('/', $part);
         }
 
-        if(!is_dir(app_path($this->directory))) {
-            if(!mkdir(app_path($this->directory),0755,true)){
+        if (!is_dir(app_path($this->directory))) {
+            if (!mkdir(app_path($this->directory), 0755, true)) {
                 return $output->writeln(
                     sprintf(
                         '<fg=red>\'Directory "%s" was not created\'</>',
@@ -75,7 +71,7 @@ class Controller extends Command
             }
         }
 
-        if(!touch($file)) {
+        if (!touch($file)) {
             return $output->writeln(
                 sprintf(
                     '<fg=red>\'File "%s" was not created\'</>',
@@ -84,7 +80,7 @@ class Controller extends Command
             );
         }
 
-        if($resource) {
+        if ($resource) {
             $content = file_get_contents(
                 dirname(__DIR__).'/resource/resource.mask'
             );
@@ -99,7 +95,7 @@ class Controller extends Command
             ['namespace '.$this->namespace,$name],
             $content
         );
-        if(!file_put_contents($file,$content)) {
+        if (!file_put_contents($file, $content)) {
             return $output->writeln(
                 sprintf(
                     '<fg=red>\'Create Controler file[%s] failed\'</>',
@@ -111,7 +107,5 @@ class Controller extends Command
         $output->writeln(
             sprintf('<fg=green>\'Create %s successfully\'</>', $name)
         );
-
-
     }
 }

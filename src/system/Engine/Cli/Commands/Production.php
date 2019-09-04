@@ -12,7 +12,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use TT\Engine\Cli\Helper;
 use TT\Engine\App;
 
-
 class Production extends Command
 {
     protected static $defaultName = 'production';
@@ -25,24 +24,21 @@ class Production extends Command
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
-    {   
+    {
         $keyGenerate = $this->getApplication()->find('key:generate');
-        $keyGenerate->run(new ArrayInput([]),$output);
+        $keyGenerate->run(new ArrayInput([]), $output);
 
-        App::get('config')->set('app.debug',false);
+        App::get('config')->set('app.debug', false);
         $config = $this->getApplication()->find('config:cache');
-        $config->run(new ArrayInput(['--create'  => true,]),$output);
+        $config->run(new ArrayInput(['--create'  => true,]), $output);
 
         $route = $this->getApplication()->find('route:cache');
-        $route->run(new ArrayInput(['--create'  => true,]),$output);
+        $route->run(new ArrayInput(['--create'  => true,]), $output);
 
-        Helper::envFileChangeFragment('APP_DEBUG','FALSE');
+        Helper::envFileChangeFragment('APP_DEBUG', 'FALSE');
 
         $output->writeln(
             "\n<fg=green;options=bold>Application in production :)</>\n"
         );
     }
-
-
-
 }

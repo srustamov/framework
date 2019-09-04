@@ -57,7 +57,6 @@ class Route extends Command
                     '<fg=green>Routes cached error</>'
                 );
             }
-
         } else {
             if (file_exists($this->file)) {
                 unlink($this->file);
@@ -66,7 +65,6 @@ class Route extends Command
                 '<fg=green>Routes cache clear successfully</>'
             );
         }
-
     }
 
 
@@ -97,8 +95,5 @@ class Route extends Command
                 }
             }
         }
-
     }
-
-
 }

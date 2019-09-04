@@ -3,8 +3,6 @@
 
 namespace TT\Engine\Cli\Commands\Table;
 
-
-
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
@@ -14,7 +12,6 @@ use TT\Engine\App;
 
 class Session extends Command
 {
-
     protected static $defaultName = 'session:table';
 
 
@@ -34,7 +31,7 @@ class Session extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $table = $input->getOption('table') ?? App::get('config')->get('session.table','sessions');
+        $table = $input->getOption('table') ?? App::get('config')->get('session.table', 'sessions');
         
         try {
             App::get('database')->exec($this->getSql($table));
@@ -46,10 +43,7 @@ class Session extends Command
             } else {
                 $output->writeln("<fg=red>{$e->getmessage()}</>");
             }
-
         }
-
-
     }
 
 

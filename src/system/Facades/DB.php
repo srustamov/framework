@@ -22,6 +22,6 @@ class DB extends Facade
 
     public static function check()
     {
-      return App::get('database',true)->pdo ?? false;
+        return App::get('database', true)->pdo ?? false;
     }
 }

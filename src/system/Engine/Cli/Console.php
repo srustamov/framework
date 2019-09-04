@@ -1,7 +1,5 @@
 <?php namespace TT\Engine\Cli;
 
-
-
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Command\Command;
 
@@ -48,9 +46,8 @@ class Console
     {
         $app = self::getApplication();
         
-        foreach (self::$commands as $command)
-        {
-            if(is_string($command)) {
+        foreach (self::$commands as $command) {
+            if (is_string($command)) {
                 $app->add(new $command());
             } else {
                 $app->add($command);
@@ -63,7 +60,7 @@ class Console
 
     public static function getApplication()
     {
-        if(self::$app === null){
+        if (self::$app === null) {
             self::$app = new Application();
         }
 
@@ -73,7 +70,7 @@ class Console
 
     public static function getInstance()
     {
-        if(self::$instance === null){
+        if (self::$instance === null) {
             self::$instance = new static;
         }
 

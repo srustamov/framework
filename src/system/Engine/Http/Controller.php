@@ -35,12 +35,11 @@ abstract class Controller
     {
         $middleware = is_array($middleware) ? $middleware : [$middleware];
         foreach ($middleware as $extension) {
-            list($name,$excepts,$guard) = Middleware::getExceptsAndGuard($extension);
+            list($name, $excepts, $guard) = Middleware::getExceptsAndGuard($extension);
             if (isset($this->middlewareAliases[$name])) {
-                Middleware::init($name,$guard,$excepts );
+                Middleware::init($name, $guard, $excepts);
             }
         }
-
     }
 
 

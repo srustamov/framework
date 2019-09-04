@@ -7,7 +7,6 @@ use TT\Engine\App;
 
 class Helper
 {
-
     public static function envFileChangeFragment($fragment, $value)
     {
         $app = App::get('app');
@@ -16,7 +15,8 @@ class Helper
 
         file_put_contents(
             $app->envFile(),
-            preg_replace_callback("/{$fragment}\s?+.?=.*/",
+            preg_replace_callback(
+                "/{$fragment}\s?+.?=.*/",
                 function ($m) use ($fragment,$value) {
                     return $fragment . '=' . $value;
                 },
@@ -29,5 +29,4 @@ class Helper
             unlink($app->envCacheFile());
         }
     }
-
 }

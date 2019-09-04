@@ -21,7 +21,7 @@ function app(string $class = null)
 
 function auth(string $guard = null)
 {
-    if($guard !== null) {
+    if ($guard !== null) {
         return App::get('authentication')->guard($guard);
     }
     return App::get('authentication');

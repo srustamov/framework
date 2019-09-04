@@ -7,9 +7,8 @@ use Lcobucci\JWT\ValidationData;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Hmac\Sha256;
 
-class Jwt{
-
-
+class Jwt
+{
     protected $ttl;
 
     protected $permittedFor;
@@ -44,16 +43,16 @@ class Jwt{
     }
 
 
-    public function addClaim(string $key,$value): self
+    public function addClaim(string $key, $value): self
     {
         $this->claims[$key] = $value;
 
         return $this;
     }
 
-    public function set(string $key,$value): self
+    public function set(string $key, $value): self
     {
-        return $this->addClaim($key,$value);
+        return $this->addClaim($key, $value);
     }
 
     public function for(string $permittedFor): self
@@ -85,11 +84,11 @@ class Jwt{
 
         $token = $this->builder->issuedBy($this->config['issued']);
 
-        if($this->permittedFor !== null && is_string($this->permittedFor)) {
+        if ($this->permittedFor !== null && is_string($this->permittedFor)) {
             $token->permittedFor($this->permittedFor);
         }
 
-        if($this->identifiedBy !== null) {
+        if ($this->identifiedBy !== null) {
             $token->identifiedBy($this->identifiedBy, true);
         }
 
@@ -97,12 +96,11 @@ class Jwt{
 
         $token->expiresAt($time + ($this->ttl ??$this->config['expires']));
 
-        foreach(array_merge($this->config['claims'],$this->claims) as $key => $value) {
+        foreach (array_merge($this->config['claims'], $this->claims) as $key => $value) {
             $token->withClaim($key, $value);
         }
 
-        return $this->token = $token->getToken($this->signer,new Key($this->config['key']));
-
+        return $this->token = $token->getToken($this->signer, new Key($this->config['key']));
     }
 
 
@@ -118,10 +116,10 @@ class Jwt{
         return $this;
     }
 
-    public function get(string $key,$default =null)
+    public function get(string $key, $default =null)
     {
-        if($this->token) {
-            return $this->token->getClaim($key,$default);
+        if ($this->token) {
+            return $this->token->getClaim($key, $default);
         }
         return $default;
     }
@@ -133,12 +131,12 @@ class Jwt{
 
         $data->setIssuer($this->config['issued']);
 
-        if($this->permittedFor !== null && is_string($this->permittedFor)) {
+        if ($this->permittedFor !== null && is_string($this->permittedFor)) {
             $data->setAudience($this->permittedFor);
         }
 
 
-        if($this->identifiedBy !== null) {
+        if ($this->identifiedBy !== null) {
             $data->setId($this->identifiedBy);
         }
 

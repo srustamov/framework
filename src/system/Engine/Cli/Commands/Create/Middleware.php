@@ -11,7 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Middleware extends Command
 {
-
     protected static $defaultName = 'create:middleware';
 
     private $namespace = 'App\Middleware';
@@ -32,27 +31,26 @@ class Middleware extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $name = $path = trim($input->getArgument('name'),'/');
+        $name = $path = trim($input->getArgument('name'), '/');
 
         $file = app_path($this->directory.'/'.$path.'.php');
 
-        if(file_exists($file)){
+        if (file_exists($file)) {
             return $output->writeln('<fg=red>The Middleware was already created</>');
         }
 
-        if(strpos($path,'/') !== false) {
-
-            $part = explode('/',$path);
+        if (strpos($path, '/') !== false) {
+            $part = explode('/', $path);
 
             $name = array_pop($part);
 
-            $this->namespace .= '\\'.implode('\\',$part);
+            $this->namespace .= '\\'.implode('\\', $part);
 
-            $this->directory .= '/'.implode('/',$part);
+            $this->directory .= '/'.implode('/', $part);
         }
 
-        if(!is_dir(app_path($this->directory))) {
-            if(!mkdir(app_path($this->directory),0755,true)){
+        if (!is_dir(app_path($this->directory))) {
+            if (!mkdir(app_path($this->directory), 0755, true)) {
                 return $output->writeln(
                     sprintf(
                         '<fg=red>\'Directory "%s" was not created\'</>',
@@ -62,7 +60,7 @@ class Middleware extends Command
             }
         }
 
-        if(!touch($file)) {
+        if (!touch($file)) {
             return $output->writeln(
                 sprintf(
                     '<fg=red>\'File "%s" was not created\'</>',
@@ -80,7 +78,7 @@ class Middleware extends Command
             ['namespace '.$this->namespace,$name],
             $content
         );
-        if(!file_put_contents($file,$content)) {
+        if (!file_put_contents($file, $content)) {
             return $output->writeln(
                 sprintf(
                     '<fg=red>\'Create Middleware file[%s] failed\'</>',
