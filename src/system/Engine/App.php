@@ -19,7 +19,7 @@ use TT\Engine\Http\Response;
 
 class App implements ArrayAccess
 {
-    public const VERSION = '1.1';
+    public const VERSION = '1.2';
 
     public static $classes = [];
 
@@ -216,14 +216,19 @@ class App implements ArrayAccess
     {
         if ($path !== null) {
             $this->paths['public'] = $path;
-        } elseif (isset($_SERVER['SCRIPT_FILENAME']) && !empty($_SERVER['SCRIPT_FILENAME'])) {
+        } elseif (
+            isset($_SERVER['SCRIPT_FILENAME']) &&
+            !empty($_SERVER['SCRIPT_FILENAME']) &&
+            !CONSOLE
+        ) {
             $parts = explode('/', $_SERVER['SCRIPT_FILENAME']);
-
             array_pop($parts);
 
             $this->paths['public'] = implode('/', $parts);
         } else {
-            $this->paths['public'] = $this->paths['base'] . DIRECTORY_SEPARATOR . 'public';
+            $this->paths['public'] = rtrim($this->paths['base'], DIRECTORY_SEPARATOR)
+                . DIRECTORY_SEPARATOR
+                . ltrim($this->paths['public'], DIRECTORY_SEPARATOR);
         }
     }
 

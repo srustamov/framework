@@ -11,8 +11,6 @@ use TT\Engine\App;
 
 class Middleware
 {
-    private static $instance;
-
 
     /**
      * @param string|object $class
@@ -32,8 +30,8 @@ class Middleware
             }
         }
 
-        $next = static function ($ClientRequest) {
-            if (App::isInstance($ClientRequest, 'request')) {
+        $next = static function ($clientRequest) {
+            if (App::isInstance($clientRequest, 'request')) {
                 return App::get('response');
             }
         };

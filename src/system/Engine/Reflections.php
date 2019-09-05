@@ -9,6 +9,7 @@
 use ReflectionMethod;
 use ReflectionFunction;
 
+
 class Reflections
 {
     public static function classMethodParameters($className, $method, array $args = [])
@@ -16,14 +17,13 @@ class Reflections
         if (!method_exists($className, $method)) {
             return $args;
         }
+        
 
-        $pParameters = (new ReflectionMethod($className, $method))->getParameters();
+        $parameters = (new ReflectionMethod($className, $method))->getParameters();
 
-        foreach ($pParameters as $num => $param) {
-            if ($param->getClass()) {
-                if (!$param->isDefaultValueAvailable()) {
-                    $args[$num] = App::get($param->getClass()->name);
-                }
+        foreach ($parameters as $num => $param) {
+            if ($param->getClass() && !$param->isDefaultValueAvailable()) {
+                array_splice($args, $num, 0,  [App::get($param->getClass()->name)]);                
             }
         }
         return $args;
@@ -35,8 +35,8 @@ class Reflections
         $parameters  = (new ReflectionFunction($function))->getParameters();
 
         foreach ($parameters as $num => $param) {
-            if ($param->getClass()) {
-                $args[$num] = App::get($param->getClass()->name);
+            if ($param->getClass() && !$param->isDefaultValueAvailable()) {
+                array_splice($args, $num, 0,  [App::get($param->getClass()->name)]);
             }
         }
         return $args;

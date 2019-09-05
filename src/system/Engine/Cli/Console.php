@@ -16,6 +16,7 @@ class Console
         Commands\Table\User::class,
         Commands\Table\Cache::class,
         Commands\RouteList::class,
+        Commands\StorageLink::class,
         Commands\KeyGenerate::class,
         Commands\StartServer::class,
         Commands\Production::class,

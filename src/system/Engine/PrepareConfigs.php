@@ -23,6 +23,6 @@ class PrepareConfigs
             }
         }
 
-        $this->app::register('config', new Config($configurations));
+        $this->app->register('config', new Config($configurations));
     }
 }

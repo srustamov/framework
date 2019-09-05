@@ -12,7 +12,6 @@ use Closure;
 use Exception;
 use TT\Engine\App;
 use TT\Engine\Reflections;
-use TT\Engine\Http\Response;
 use TT\Engine\Http\Middleware;
 use TT\Exceptions\RouteException;
 use App\Exceptions\NotFoundException;
