@@ -171,7 +171,7 @@ class Route
 
         $method     = $this->getRequestMethod();
 
-        $ajax       = $this->app::get('http')->isAjax();
+        $ajax       = $this->app->get('http')->isAjax();
 
         foreach ($this->routes[$method] as $resource) {
             if (!$ajax && $resource['ajax']) {
@@ -216,44 +216,47 @@ class Route
 
 
     /**
-     * @param String $action
+     * @param string $action
      * @param $middleware_array
      * @param $args
      * @return mixed
      * @throws NotFoundException|Exception
      */
-    protected function callAction(String $action, $middleware_array, $args)
+    protected function callAction(string $handler, $middleware_array, $args)
     {
 
-        list($controller, $method) = explode('@', $action);
+        list($controller, $method) = explode('@', $handler);
 
         if (strpos($controller, '/') !== false) {
             $controller = str_replace('/', '\\', $controller);
         }
 
-        $controller_with_namespace = "\\" . $this->namespace . "\\$controller";
+        $class = "\\" . $this->namespace . "\\$controller";
 
-        if (method_exists($controller_with_namespace, $method)) {
+        if (method_exists($class, $method)) {
             define('ACTION', strtolower($method));
 
             define('CONTROLLER', $controller);
 
             $this->callMiddleware($middleware_array);
 
-            $args = Reflections::classMethodParameters($controller_with_namespace, $method, $args);
+            $args = Reflections::classMethodParameters(
+                $class, $method, $args
+            );
 
-            if (method_exists($controller_with_namespace, '__construct')) {
-                $constructorArgs = Reflections::classMethodParameters($controller_with_namespace, '__construct');
-            } else {
-                $constructorArgs = [];
+            $constructorArgs = [];
+            if (method_exists($class, '__construct')) {
+                $constructorArgs = Reflections::classMethodParameters(
+                    $class, '__construct'
+                );
             }
 
-            $content = call_user_func_array([new $controller_with_namespace(...$constructorArgs), $method], $args);
+            $response = call_user_func_array([new $class(...$constructorArgs), $method], $args);
 
-            if ($this->app::isInstance($content, 'response')) {
-                return $content;
+            if ($this->app->isInstance($response, 'response')) {
+                return $response;
             }
-            return $this->app::get('response')->appendContent($content);
+            return $this->app->get('response')->appendContent($response);
         }
 
         if (class_exists('NotFoundException')) {
@@ -277,12 +280,12 @@ class Route
 
         $args = Reflections::functionParameters($handler, $args);
 
-        $content = call_user_func_array($handler, $args);
+        $response = call_user_func_array($handler, $args);
 
-        if ($this->app::isInstance($content, 'response')) {
-            return $content;
+        if ($this->app->isInstance($response, 'response')) {
+            return $response;
         }
-        return $this->app::get('response')->appendContent($content);
+        return $this->app->get('response')->appendContent($response);
     }
 
 

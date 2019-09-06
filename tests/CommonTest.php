@@ -36,19 +36,21 @@ class CommonTest extends TestCase
 
         $this->assertTrue($response instanceof  Response);
 
+        $response->make('');
+
         $_SERVER['REQUEST_URI'] = '/test/123';
 
         Route::flush();
 
-        Route::get('/test/{id}', function ($id, Request $request) {
-            $this->assertEquals($id, '123');
-            $this->assertTrue($request->isMethod('GET'));
-            $this->assertEquals($request->url(), '/test/123');
-            $this->assertEquals($request->params('id'), '123');
-            return 'Id is ' . $id;
-        })->pattern(['id' => '[1-9]([0-9]+)?'])->run();
-
-        $this->assertEquals(\TT\Facades\Response::getContent(), 'Id is 123');
+        $response = Route::get('/test/{id}', function ($id, Request $request) {
+                        $this->assertEquals($id, '123');
+                        $this->assertTrue($request->isMethod('GET'));
+                        $this->assertEquals($request->url(), '/test/123');
+                        $this->assertEquals($request->params('id'), '123');
+                        return 'Id is ' . $id;
+                    })->pattern(['id' => '[1-9]([0-9]+)?'])->run();
+                    
+        $this->assertEquals($response->getContent(), 'Id is 123');
     }
 
 

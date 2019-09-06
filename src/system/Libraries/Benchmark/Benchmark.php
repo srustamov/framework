@@ -1,4 +1,6 @@
-<?php namespace TT\Libraries\Benchmark;
+<?php
+
+namespace TT\Libraries\Benchmark;
 
 /**
  * @package TT
@@ -8,13 +10,10 @@
  * @category  Benchmark
  */
 
-use TT\Engine\Http\Response;
 use TT\Engine\App;
 
 class Benchmark
 {
-    private static $instance;
-
     private $app;
 
     public function __construct(App $app)
@@ -33,7 +32,7 @@ class Benchmark
     }
 
 
-    public function countRequiredFiles():Int
+    public function countRequiredFiles(): Int
     {
         return count(get_required_files());
     }
@@ -46,23 +45,23 @@ class Benchmark
 
 
 
-    private function getBenchMarkTableData($finish, $start):array
+    private function getBenchMarkTableData($finish, $start): array
     {
         $data = array(
-          'Load time'        => $this->loadTime($finish, $start)." seconds",
-          'Memory usage'     => (int) (memory_get_usage()/1024)." kb",
-          'Peak Memory usage'=> (int) (memory_get_peak_usage()/1024)." kb",
-          'Load files'       => $this->countRequiredFiles(),
-          'Controller'       => defined('CONTROLLER') ? CONTROLLER : null,
-          'Action'           => defined('ACTION') ? ACTION : null,
-          'Request Method'   => $this->server('request_method'),
-          'Request Uri'      => $this->app::get('url')->request(),
-          'IP'               => $this->app::get('http')->ip(),
-          'Document root'    => basename($this->server('document_root')),
-          'Locale'           => $this->app::get('language')->locale(),
-          'Protocol'         => $this->server('server_protocol'),
-          'Software'         => $this->server('server_software')
-      );
+            'load-time'        => $this->loadTime($finish, $start) . " s",
+            'memory-usage'     => (int) (memory_get_usage() / 1024) . " kb",
+            'Peak Memory usage' => (int) (memory_get_peak_usage() / 1024) . " kb",
+            'load-files'       => $this->countRequiredFiles() - 1,
+            'Controller'       => defined('CONTROLLER') ? CONTROLLER : null,
+            'Action'           => defined('ACTION') ? ACTION : null,
+            'Request Method'   => $this->server('request_method'),
+            'Request Uri'      => $this->app::get('url')->request(),
+            'IP'               => $this->app::get('http')->ip(),
+            'Document root'    => basename($this->server('document_root')),
+            'Locale'           => $this->app::get('language')->locale(),
+            'Protocol'         => $this->server('server_protocol'),
+            'Software'         => $this->server('server_software')
+        );
 
         return $data;
     }

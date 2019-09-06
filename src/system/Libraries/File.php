@@ -150,7 +150,7 @@ class File
             $return = fwrite($path, $content);
 
             if ($lock) {
-                flock($path);
+                flock($path,LOCK_EX);
             }
 
             fclose($path);
@@ -195,7 +195,7 @@ class File
 
     public function delete($files): Bool
     {
-        $_files = is_array($files) ? $files : func_num_args();
+        $_files = is_array($files) ? $files : func_get_args();
 
         $error = 0;
 
