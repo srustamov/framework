@@ -189,24 +189,6 @@ class App implements ArrayAccess
         return CONSOLE ? self::get('response') : $route->run();
     }
 
-
-    /**
-     * Show Application Benchmark Panel in development mode
-     *
-     * @param $finish
-     * @return string|null
-     */
-    public function benchmark($finish)
-    {
-        if (!(CONSOLE ||
-            !self::get('config')->get('app.debug') ||
-            self::get('http')->isAjax() ||
-            self::get('request')->isJson())) {
-            return self::get('benchmark')->table($finish);
-        }
-        return null;
-    }
-
     /**
      * Create application public path
      *

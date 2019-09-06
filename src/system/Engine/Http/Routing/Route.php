@@ -253,7 +253,7 @@ class Route
             if ($this->app::isInstance($content, 'response')) {
                 return $content;
             }
-            return $this->app::get('response')->setContent($content);
+            return $this->app::get('response')->appendContent($content);
         }
 
         if (class_exists('NotFoundException')) {
@@ -282,7 +282,7 @@ class Route
         if ($this->app::isInstance($content, 'response')) {
             return $content;
         }
-        return $this->app::get('response')->setContent($content);
+        return $this->app::get('response')->appendContent($content);
     }
 
 

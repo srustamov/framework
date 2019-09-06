@@ -121,5 +121,6 @@ class Redirect
 
     public function __toString()
     {
+        return '';
     }
 }

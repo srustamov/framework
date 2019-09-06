@@ -178,7 +178,7 @@ class File
 
     public function get($path)
     {
-        if ($this->isFile($path)) {
+        if ($this->is($path)) {
             return file_get_contents($path);
         }
         throw new \RuntimeException('File does not exist at path ' . $path);
