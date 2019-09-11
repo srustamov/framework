@@ -12,7 +12,6 @@ TT\Facades\Config::set('app',[
     'url'=> 'http://localhost:8000'
 ]);
 
-$_SERVER['HTTP_HOST'] = 'localhost:8000';
 
-return $app;
+
 

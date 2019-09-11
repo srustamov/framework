@@ -199,7 +199,7 @@ class Storage
     {
         $path =  path(trim($this->path, '/'). '/' . trim($path, '/'));
 
-        if (is_dir($dir = pathinfo($path, PATHINFO_DIRNAME))) {
+        if (!is_dir($dir = pathinfo($path, PATHINFO_DIRNAME))) {
             if (!mkdir($dir, 0755, true) && !is_dir($dir)) {
                 throw new \RuntimeException(sprintf('Directory "%s" was not created', $dir));
             }

@@ -8,11 +8,11 @@ use TT\Engine\Http\Response;
 
 class CommonTest extends TestCase
 {
-    
+
     public function testBoot()
     {
         /**@var $app TT\Engine\App*/
-        $app = require __DIR__ . '/bootstrap.php';
+        global $app;
 
         $this->assertTrue($app->isBoot());
     }
@@ -23,15 +23,13 @@ class CommonTest extends TestCase
 
         $_SERVER['REQUEST_URI'] = '/';
 
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-
         Route::get('/', function (Request $request) {
             $this->assertTrue($request->isMethod('GET'));
             $this->assertEquals($request->url(), '/');
             return 'response';
         });
 
+        /**@var $response TT\Engine\Http\Response*/
         $response = Route::run();
 
         $this->assertTrue($response instanceof  Response);
@@ -49,7 +47,7 @@ class CommonTest extends TestCase
                         $this->assertEquals($request->params('id'), '123');
                         return 'Id is ' . $id;
                     })->pattern(['id' => '[1-9]([0-9]+)?'])->run();
-                    
+
         $this->assertEquals($response->getContent(), 'Id is 123');
     }
 
@@ -73,7 +71,7 @@ class CommonTest extends TestCase
         app('request')->prepare()->method = 'POST';
 
         Route::post('/',function(Request $request){
-            
+
             $this->assertEquals($request->id,123);
             $this->assertEquals($request->email, 'rustemovv96@gmail.com');
             $this->assertEquals($request->name, 'Samir');

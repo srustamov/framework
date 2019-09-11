@@ -288,7 +288,6 @@ class App implements ArrayAccess
             'app' => "TT\Engine\App",
             'array' => 'TT\Libraries\Arr',
             'authentication' => 'TT\Libraries\Auth\Authentication',
-            'benchmark' => 'TT\Libraries\Benchmark\Benchmark',
             'cache' => 'TT\Libraries\Cache\Cache',
             'console' => 'TT\Engine\Cli\Console',
             'cookie' => 'TT\Libraries\Cookie',
