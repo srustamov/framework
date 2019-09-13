@@ -81,7 +81,7 @@ class Route
 
     public function getMiddlewareAliases(): array
     {
-        $this->middlewareAliases;
+        return $this->middlewareAliases;
     }
 
 

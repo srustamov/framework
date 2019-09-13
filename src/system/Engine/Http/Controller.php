@@ -46,8 +46,8 @@ abstract class Controller
         
         foreach ($middleware as $extension) {
             list($name, $excepts, $guard) = Middleware::getExceptsAndGuard($extension);
-            if (isset($this->middlewareAliases[$name])) {
-                Middleware::init($this->middlewareAliases[$name], $guard, $excepts);
+            if (isset($this->middleware_aliases[$name])) {
+                Middleware::init($this->middleware_aliases[$name], $guard, $excepts);
             }
         }
     }
