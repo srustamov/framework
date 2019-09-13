@@ -10,7 +10,6 @@
 
 
 use TT\Engine\App;
-use TT\Facades\DB;
 
 class Cache
 {

@@ -79,6 +79,12 @@ class Route
     }
 
 
+    public function getMiddlewareAliases(): array
+    {
+        $this->middlewareAliases;
+    }
+
+
     /**
      * @param String $namespace
      */

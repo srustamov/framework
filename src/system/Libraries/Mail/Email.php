@@ -3,7 +3,6 @@
 use PHPMailer\PHPMailer\PHPMailer;
 use TT\Facades\Language;
 use TT\Facades\Config;
-use TT\Engine\App;
 
 class Email extends PHPMailer
 {

@@ -13,7 +13,8 @@ use Windwalker\Edge\Cache\EdgeFileCache;
 use Windwalker\Edge\Loader\EdgeFileLoader;
 use Windwalker\Edge\Extension\EdgeExtensionInterface;
 use Windwalker\Edge\Edge;
-use TT\Engine\App;
+use TT\Facades\Session;
+use TT\Facades\Config;
 
 class View
 {
@@ -60,7 +61,7 @@ class View
 
     protected function withFlashData()
     {
-        if ($errors = App::get('session')->flash('view-errors')) {
+        if ($errors = Session::flash('view-errors')) {
             $errors = new Errors($errors);
         }
 
@@ -87,33 +88,50 @@ class View
 
         $this->withFlashData();
 
-        $loader = new EdgeFileLoader(App::get('config')->get('view.files'));
+        $loader = new EdgeFileLoader((array)Config::get('view.files'));
 
-        foreach (App::get('config')->get('view.file_extensions', []) as $file_extension) {
+        foreach (Config::get('view.file_extensions', []) as $file_extension) {
             $loader->addFileExtension($file_extension);
         }
 
-        $edge = new Edge($loader, null, new EdgeFileCache(App::get('config')->get('view.cache_path')));
+        $edge = new Edge($loader, null, new EdgeFileCache(
+                Config::get('view.cache_path')
+            )
+        );
 
-        if ($extensions = App::get('config')->get('view.extensions')) {
+        if ($extensions = Config::get('view.extensions')) {
             foreach ($extensions as $extension) {
-                if (new $extension instanceof EdgeExtensionInterface) {
-                    $edge->addExtension(new $extension());
+                $object = new $extension;
+                if ($object instanceof EdgeExtensionInterface) {
+                    $edge->addExtension($object);
                 }
             }
         }
 
-        $content = $edge->render($this->file, $this->data);
+        $content = $this->checkMinify(
+            $edge->render($this->file, $this->data)
+        );
 
+
+        $this->reset();
+
+        return $content;
+    }
+
+
+    private function checkMinify($content)
+    {
         if ($this->minify === null) {
-            $this->minify = App::get('config')->get('view.minify');
+            $this->minify = Config::get('view.minify');
         }
 
         if ($this->minify) {
-            $content  = preg_replace('/([\n]+)|([\s]{2})/', '', $content);
-        }
+            $search = array('/\>[^\S ]+/s', '/[^\S ]+\</s', '/(\s)+/s');
 
-        $this->reset();
+            $replace = array('>', '<', '\\1');
+
+            $content  = preg_replace($search, $replace, $content);
+        }
 
         return $content;
     }

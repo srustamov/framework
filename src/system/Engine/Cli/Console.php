@@ -35,9 +35,11 @@ class Console
     }
 
 
-    public static function setCommand(Command $command)
+    public static function setCommand($commands)
     {
-        self::$commands[] = $command;
+        $commands = is_array($commands) ? $commands : [$commands];
+
+        self::$commands = array_merge(self::$commands,$commands);
 
         return self::getInstance();
     }

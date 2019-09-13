@@ -30,7 +30,17 @@ class Errors implements ArrayAccess, Countable
             if (is_array($this->errors[$key])) {
                 return $this->errors[$key][0] ?? false;
             }
+            return $this->errors[$key] ?? false;
+        }
+        return false;
+    }
 
+    public function last($key)
+    {
+        if (isset($this->errors[$key])) {
+            if (is_array($this->errors[$key])) {
+                return end($this->errors[$key]);
+            }
             return $this->errors[$key] ?? false;
         }
         return false;
@@ -58,10 +68,6 @@ class Errors implements ArrayAccess, Countable
         return $this->errors[$name];
     }
 
-    public static function __callStatic($name, $arguments)
-    {
-        return (new static)->errors[$name];
-    }
 
     /**
      * Whether a offset exists

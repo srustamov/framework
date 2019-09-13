@@ -53,7 +53,7 @@ class Middleware extends Command
             if (!mkdir(app_path($this->directory), 0755, true)) {
                 return $output->writeln(
                     sprintf(
-                        '<fg=red>\'Directory "%s" was not created\'</>',
+                        '<fg=red>Directory "%s" was not created</>',
                         app_path($this->directory)
                     )
                 );
@@ -63,14 +63,14 @@ class Middleware extends Command
         if (!touch($file)) {
             return $output->writeln(
                 sprintf(
-                    '<fg=red>\'File "%s" was not created\'</>',
+                    '<fg=red>File "%s" was not created</>',
                     app_path($file)
                 )
             );
         }
 
         $content = file_get_contents(
-            dirname(__DIR__).'/resource/middleware.mask'
+            dirname(__DIR__,2).'/resource/middleware.mask'
         );
 
         $content = str_replace(
@@ -81,14 +81,14 @@ class Middleware extends Command
         if (!file_put_contents($file, $content)) {
             return $output->writeln(
                 sprintf(
-                    '<fg=red>\'Create Middleware file[%s] failed\'</>',
+                    '<fg=red>Create Middleware file[%s] failed</>',
                     app_path($file)
                 )
             );
         }
 
         $output->writeln(
-            sprintf('<fg=green>\'Create %s successfully\'</>', $name)
+            sprintf('<fg=green>Create %s successfully</>', $name)
         );
     }
 }

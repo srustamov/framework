@@ -1,6 +1,7 @@
 <?php namespace TT\Libraries;
 
-use TT\Engine\Load;
+
+use TT\Facades\Config;
 use Predis\Client as RedisDriver;
 
 /**
@@ -153,7 +154,6 @@ use Predis\Client as RedisDriver;
  * @method array georadiusbymember($key, $member, $radius, $unit, array $options = null)
  */
 
- use TT\Facades\Config;
 
  class Redis extends RedisDriver
  {

@@ -64,7 +64,7 @@ class Controller extends Command
             if (!mkdir(app_path($this->directory), 0755, true)) {
                 return $output->writeln(
                     sprintf(
-                        '<fg=red>\'Directory "%s" was not created\'</>',
+                        '<fg=red>Directory "%s" was not created</>',
                         app_path($this->directory)
                     )
                 );
@@ -82,11 +82,11 @@ class Controller extends Command
 
         if ($resource) {
             $content = file_get_contents(
-                dirname(__DIR__).'/resource/resource.mask'
+                dirname(__DIR__,2).'/resource/resource.mask'
             );
         } else {
             $content = file_get_contents(
-                dirname(__DIR__).'/resource/controller.mask'
+                dirname(__DIR__,2).'/resource/controller.mask'
             );
         }
 
@@ -98,14 +98,14 @@ class Controller extends Command
         if (!file_put_contents($file, $content)) {
             return $output->writeln(
                 sprintf(
-                    '<fg=red>\'Create Controler file[%s] failed\'</>',
+                    '<fg=red>Create Controller file[%s] failed</>',
                     app_path($file)
                 )
             );
         }
 
         $output->writeln(
-            sprintf('<fg=green>\'Create %s successfully\'</>', $name)
+            sprintf('<fg=green>Create %s successfully</>', $name)
         );
     }
 }

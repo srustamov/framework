@@ -127,7 +127,7 @@ class File
             return (require $file);
         }
 
-        throw new \RuntimeException("File not found.Path: ({$file})");
+        throw new RuntimeException("File not found.Path: ({$file})");
     }
 
     public function exists($filename): Bool
@@ -141,7 +141,7 @@ class File
             return (require_once $file);
         }
 
-        throw new \RuntimeException("File not found.Path: ({$file})");
+        throw new RuntimeException("File not found.Path: ({$file})");
     }
 
     public function write($path, $content, $lock = false)
@@ -181,7 +181,7 @@ class File
         if ($this->is($path)) {
             return file_get_contents($path);
         }
-        throw new \RuntimeException('File does not exist at path ' . $path);
+        throw new RuntimeException('File does not exist at path ' . $path);
     }
 
     public function chmod($path, $mode = null)

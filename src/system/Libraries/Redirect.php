@@ -25,7 +25,7 @@ class Redirect
 
     public function route($name, array $parameters = [])
     {
-        return $this->to(Route::getName($name, $parameters));
+        return $this->to((string)Route::getName($name, $parameters));
     }
 
 
@@ -47,7 +47,7 @@ class Redirect
     }
 
 
-    public function to(String $url, $refresh = 0, $http_response_code = 302): self
+    public function to(string $url, $refresh = 0, $http_response_code = 302): self
     {
         $url = $this->prepareUrl($url);
 

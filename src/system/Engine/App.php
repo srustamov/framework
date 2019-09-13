@@ -179,6 +179,7 @@ class App implements ArrayAccess
      * Application Routing
      *
      * @return Response
+     * @throws Exception
      */
     public function routing(): Response
     {
@@ -309,7 +310,7 @@ class App implements ArrayAccess
             'lang' => 'TT\Libraries\Language',
             'language' => 'TT\Libraries\Language',
             'middleware' => 'TT\Engine\Http\Middleware',
-            'openssl' => 'TT\Libraries\Encrypt\OpenSsl',
+            'openssl' => 'TT\Libraries\Encryption\OpenSsl',
             'jwt' => 'TT\Libraries\Auth\Jwt',
             'redirect' => 'TT\Libraries\Redirect',
             'redis' => 'TT\Libraries\Redis',

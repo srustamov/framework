@@ -16,6 +16,10 @@ abstract class Controller
 {
 
 
+
+    protected $middleware_aliases = [];
+
+
     /**
      * @param String $file
      * @param array $data
@@ -34,10 +38,16 @@ abstract class Controller
     protected function middleware($middleware)
     {
         $middleware = is_array($middleware) ? $middleware : [$middleware];
+
+        if(empty($this->middleware_aliases)) {
+            $this->middleware_aliases = App::get('route')->getMiddlewareAliases();
+        }
+
+        
         foreach ($middleware as $extension) {
             list($name, $excepts, $guard) = Middleware::getExceptsAndGuard($extension);
             if (isset($this->middlewareAliases[$name])) {
-                Middleware::init($name, $guard, $excepts);
+                Middleware::init($this->middlewareAliases[$name], $guard, $excepts);
             }
         }
     }

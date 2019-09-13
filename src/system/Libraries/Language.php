@@ -1,4 +1,6 @@
-<?php namespace TT\Libraries;
+<?php
+
+namespace TT\Libraries;
 
 /**
  * @package    TT
@@ -15,20 +17,21 @@ class Language implements \ArrayAccess
 {
     protected $languages = [];
 
+    private $app;
 
-    public function __construct()
+
+    public function __construct(App $app)
     {
+
+        $this->app = $app;
+
         $this->prepare();
     }
 
 
     public function prepare()
     {
-        $locale = $this->locale();
-
-        $app = App::getInstance();
-
-        foreach (glob($app->langPath($locale.'/*')) as $file) {
+        foreach (glob($this->app->langPath($this->locale() . '/*')) as $file) {
             $this->languages[pathinfo($file, PATHINFO_FILENAME)] = require_once($file);
         }
     }
@@ -50,7 +53,7 @@ class Language implements \ArrayAccess
             }
 
             $keys = array_map(function ($key) {
-                return ':'.$key;
+                return ':' . $key;
             }, array_keys($replace));
 
             $values = array_values($replace);
@@ -81,7 +84,7 @@ class Language implements \ArrayAccess
 
 
 
-    public function all():array
+    public function all(): array
     {
         return $this->languages;
     }
@@ -91,19 +94,19 @@ class Language implements \ArrayAccess
 
 
 
-    public function locale($locale = null):String
+    public function locale(string $locale = null): string
     {
-        if (!is_null($locale)) {
-            App::get('session')->set('_LOCALE', $locale);
+        if ($locale !== null) {
+            $this->app->get('session')->set('_LOCALE', $locale);
 
             return $locale;
         } else {
-            if ($locale = App::get('session')->get('_LOCALE')) {
+            if ($locale = $this->app->get('session')->get('_LOCALE')) {
                 return $locale;
             } else {
-                $locale  = App::get('config')->get('app.locale', 'en');
+                $locale  = $this->app->get('config')->get('app.locale', 'en');
 
-                App::get('session')->set('_LOCALE', $locale);
+                $this->app->get('session')->set('_LOCALE', $locale);
 
                 return $locale;
             }

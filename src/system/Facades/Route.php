@@ -16,7 +16,6 @@
  * @method static patch($path, $handler): self
  * @method static form($path, $handler): self
  * @method static any($path, $handler): self
- * @method static $group_parameters, \Closure $callback($path, $handler): self
  * @method static group($group_parameters, \Closure $callback)
  * @method static name($name): self
  * @method static pattern($pattern): self

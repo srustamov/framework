@@ -88,6 +88,21 @@ function importFiles($directory, $once = true)
 }
 
 
+function bcrypt($value,$hash = null)
+{
+    if($hash === null) {
+        return App::get('hash')->make($value);
+    }
+
+    return App::get('hash')->check($value,$hash);
+}
+
+function openssl()
+{
+    return App::get('openssl');
+}
+
+
 function storage_path($path = '')
 {
     return App::getInstance()->storagePath($path);

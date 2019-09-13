@@ -1,4 +1,4 @@
-<?php namespace TT\Libraries;
+<?php namespace TT\Libraries\Cookie;
 
 /**
  * @package    TT
@@ -11,11 +11,10 @@
 
 
 use TT\Engine\App;
-use TT\Facades\OpenSsl;
 use TT\Exceptions\CookieException;
-use ArrayAccess;
+use TT\Libraries\Encryption\OpenSsl;
 
-class Cookie implements ArrayAccess
+class Cookie implements \ArrayAccess
 {
     private $prefix;
 
@@ -29,15 +28,19 @@ class Cookie implements ArrayAccess
 
     private $encrypt_except_keys = [];
 
+    private $encryption;
 
 
-    public function __construct()
+
+    public function __construct(OpenSsl $encryption,App $app)
     {
-        $config = App::get('config')->get('cookie');
+        $this->encryption = $encryption;
+
+        $config = $app->get('config')->get('cookie');
 
         $this->prefix    = $config['prefix'];
-        $this->http_only = is_bool($config['http_only'])? $config['http_only'] : $this->http_only;
-        $this->secure    = is_bool($config['secure'])   ? $config['secure']    : $this->secure;
+        $this->http_only = (bool) $config['http_only'];
+        $this->secure    = (bool) $config['secure'];
         $this->path      = $config['path'];
         $this->domain    = $config['domain'];
         $this->encrypt_except_keys = $config['encrypt_except_keys'] ?? [];
@@ -183,7 +186,7 @@ class Cookie implements ArrayAccess
             return $data;
         }
 
-        return OpenSsl::encrypt(serialize($data));
+        return $this->encryption->encrypt(serialize($data));
     }
 
 
@@ -193,7 +196,7 @@ class Cookie implements ArrayAccess
             return $data;
         }
 
-        return unserialize(OpenSsl::decrypt($data), ['allow_classes' => []]);
+        return unserialize($this->encryption->decrypt($data), ['allow_classes' => []]);
     }
 
 
