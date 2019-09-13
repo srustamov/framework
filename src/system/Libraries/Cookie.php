@@ -1,4 +1,4 @@
-<?php namespace TT\Libraries\Cookie;
+<?php namespace TT\Libraries;
 
 /**
  * @package    TT
