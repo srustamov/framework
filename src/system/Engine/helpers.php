@@ -150,15 +150,25 @@ function __($word = null, $replace = [])
  */
 function abort(Int $http_code, $message = null, $headers = [])
 {
-    if (file_exists(app_path('Views/errors/' . $http_code . '.blade.php'))) {
+    $file = app_path('Views/errors/' . $http_code);
+
+    if (file_exists($file.'.blade.php')) {
         $content = view('errors.' . $http_code);
+    } else if (file_exists($file.'.php')) {
+        ob_start();
+        require $file.'.php';
+        $content = ob_get_clean();
+    } else if(file_exists($file.'.html')) {
+        $content = file_get_contents($file.'.html');
+    } else {
+        $content = null;
     }
 
     $response = App::get('response')->setStatusCode($http_code, $message);
 
     $response->withHeaders($headers);
 
-    $response->setContent($content ?? null);
+    $response->setContent($content);
 
     $response->send();
 
