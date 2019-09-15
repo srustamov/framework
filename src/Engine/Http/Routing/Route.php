@@ -466,7 +466,7 @@ class Route
     {
         $route  = new Route($this->app);
 
-        $this->app->register('route', $route);
+        $this->app->singleton('route', $route);
 
         return $route;
     }

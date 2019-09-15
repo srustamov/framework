@@ -33,7 +33,7 @@
       "TT\\": "src/"
     },
     "files":[
-      "src/system/Engine/helpers.php"
+      "src/Engine/helpers.php"
     ]
   },
   "minimum-stability": "dev",
