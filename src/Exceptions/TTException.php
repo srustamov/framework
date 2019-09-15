@@ -11,19 +11,27 @@ use TT\Engine\Cli\PrintConsole;
 
 class TTException
 {
+    
     private function show($e)
     {
         $this->writeErrorLog($e);
-
         if (CONSOLE) {
-            echo "Error:".$e->getMessage()."\n";
-            echo "File:".$e->getFile()."\n";
-            echo "Line:".$e->getLine()."\n";
-            exit;
+            exit(<<<_ERROR
+*--------------ERROR-----------------
+* Message| {$e->getMessage()}
+*           
+*--------*---------------------------
+* File:  | {$e->getFile()}
+*--------*---------------------------
+* Line:  | {$e->getLine()}
+*--------*---------------------------\n
+_ERROR);
+
         }
 
-        return abort(500);
+        abort(500);
     }
+
 
 
     public function handler($e)

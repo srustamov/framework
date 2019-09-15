@@ -98,7 +98,7 @@ class App implements ArrayAccess
         if (!$this->isBoot()) {
             $this->setPublicPath();
 
-            self::register('request', new Request($this));
+            $this->singleton('request', new Request($this));
 
             $this->callImportantClasses();
 
@@ -350,7 +350,7 @@ class App implements ArrayAccess
         }
         if ($instance = self::getInstance()->classes($class)) {
             if (method_exists($instance, '__construct')) {
-                $args = Reflections::classMethodParameters($instance, '__construct', $args);
+                $args = Reflections::methodParameters($instance, '__construct', $args);
             }
             static::$classes[$class] = new $instance(...$args);
             return static::$classes[$class];
@@ -360,7 +360,7 @@ class App implements ArrayAccess
                 return static::get($instance, ...$args);
             }
 
-            static::$classes[$class] = new $class(Reflections::classMethodParameters($class, '__construct', $args));
+            static::$classes[$class] = new $class(Reflections::methodParameters($class, '__construct', $args));
 
             return static::$classes[$class];
         }
@@ -371,10 +371,10 @@ class App implements ArrayAccess
      * @param $className
      * @param $object
      */
-    public static function register($className, $object): void
+    public function singleton($className, $object): void
     {
         if ($object instanceof Closure) {
-            static::register($className, $object());
+            static::$classes[$className] = $object($this);
         } elseif (is_string($object)) {
             static::$classes[$className] = new $object();
         } elseif (is_object($object)) {
@@ -444,7 +444,7 @@ class App implements ArrayAccess
      */
     public function offsetSet($offset, $value): void
     {
-        self::register($offset, $value);
+        $this->singleton($offset, $value);
     }
 
     /**
@@ -458,7 +458,9 @@ class App implements ArrayAccess
      */
     public function offsetUnset($offset): void
     {
-        unset($this[$offset]);
+        if(isset(self::$classes[$offset])) {
+            unset(self::$classes[$offset]);
+        }
     }
 
     /**

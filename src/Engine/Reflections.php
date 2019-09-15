@@ -12,16 +12,16 @@ use ReflectionFunction;
 
 class Reflections
 {
-    public static function classMethodParameters($className, $method, array $args = [])
+    public static function methodParameters($className, $method, array $args = [])
     {
         if (!method_exists($className, $method)) {
             return $args;
         }
         
 
-        $parameters = (new ReflectionMethod($className, $method))->getParameters();
+        $reflection = new ReflectionMethod($className, $method);
 
-        foreach ($parameters as $num => $param) {
+        foreach ($reflection->getParameters() as $num => $param) {
             if ($param->getClass() && !$param->isDefaultValueAvailable()) {
                 array_splice($args, $num, 0,  [App::get($param->getClass()->name)]);                
             }
@@ -32,9 +32,9 @@ class Reflections
 
     public static function functionParameters($function, array $args = [])
     {
-        $parameters  = (new ReflectionFunction($function))->getParameters();
+        $reflection = new ReflectionFunction($function);
 
-        foreach ($parameters as $num => $param) {
+        foreach ($reflection->getParameters() as $num => $param) {
             if ($param->getClass() && !$param->isDefaultValueAvailable()) {
                 array_splice($args, $num, 0,  [App::get($param->getClass()->name)]);
             }

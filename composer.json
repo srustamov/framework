@@ -30,7 +30,7 @@
   },
   "autoload": {
     "psr-4": {
-      "TT\\": "src/system/"
+      "TT\\": "src/"
     },
     "files":[
       "src/system/Engine/helpers.php"

@@ -246,13 +246,13 @@ class Route
 
             $this->callMiddleware($middleware_array);
 
-            $args = Reflections::classMethodParameters(
+            $args = Reflections::methodParameters(
                 $class, $method, $args
             );
 
             $constructorArgs = [];
             if (method_exists($class, '__construct')) {
-                $constructorArgs = Reflections::classMethodParameters(
+                $constructorArgs = Reflections::methodParameters(
                     $class, '__construct'
                 );
             }
