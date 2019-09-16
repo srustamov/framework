@@ -4,4 +4,4 @@ php:
 
 before_script:
   - sh -c "composer install"
-script: composer test
+script: phpunit
