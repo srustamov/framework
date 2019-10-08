@@ -92,7 +92,18 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
 
     protected function prepareInputData()
     {
+        if($this->isJson()) {
+            $content = file_get_contents('php://input');
+            
+            $data = json_decode($content);
+            
+            if(json_last_error() == JSON_ERROR_NONE) {
+                return $data;
+            }
+            unset($data);
+        }
         parse_str(file_get_contents('php://input'), $data);
+        
 
         return $data;
     }
