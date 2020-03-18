@@ -15,9 +15,9 @@ use JsonSerializable;
 use Countable;
 use App\Exceptions\ModelNotFoundException;
 
-abstract class Model implements ArrayAccess, JsonSerializable, Countable
+class Model implements ArrayAccess, JsonSerializable, Countable
 {
-    use Relations\HasMany,Relations\HasOne,Relations\BelongsTo;
+    use Relations\HasMany,Relations\BelongsTo;
 
     protected static $models = [];
 
@@ -35,6 +35,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         if (!$this->isBooted()) {
             $this->boot();
         }
+        DB::setModel(self::getInstance());
     }
 
 
@@ -84,9 +85,6 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         return false;
     }
 
-
-
-
     public function delete()
     {
         $pk = $this->getAttribute($this->getPrimaryKey());
@@ -97,9 +95,6 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         }
         return $delete;
     }
-
-
-
 
     /**
      * @param array $data
@@ -131,13 +126,13 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         }
         $select = self::getInstance()->select ?? '*';
 
-        $result = self::getQuery()->select($select)->where($where)->toArray(true);
+        $result = self::getQuery()->select($select)->where($where)->first();
 
         if (!$result) {
             return null;
         }
 
-        self::getInstance()->setAttributes((array)$result);
+        // self::getInstance()->setAttributes((array)$result);
 
         return self::getInstance();
     }
@@ -212,7 +207,13 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
 
     public function getAttribute($name)
     {
-        return self::getInstance()->attributes[$name] ?? null;
+        if(isset(self::getInstance()->attributes[$name])) {
+            return self::getInstance()->attributes[$name];
+        }
+        if(method_exists(self::getInstance(),$name)) {
+            return self::getInstance()->$name();
+        }
+        return null;
     }
 
     public function setAttribute($name, $value)
@@ -220,9 +221,9 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         self::getInstance()->attributes[$name] = $value;
     }
 
-    public function setAttributes(array $attributes)
+    public function setAttributes($attributes)
     {
-        self::getInstance()->attributes = $attributes;
+        self::getInstance()->attributes = (array) $attributes;
 
         return self::getInstance();
     }

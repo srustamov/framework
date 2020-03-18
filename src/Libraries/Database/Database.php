@@ -1,4 +1,6 @@
-<?php namespace TT\Libraries\Database;
+<?php
+
+namespace TT\Libraries\Database;
 
 /**
  * @package    TT
@@ -38,9 +40,14 @@ class Database extends Connection
 
     private $bindValues = [];
 
+    private $model;
 
 
 
+    public function setModel(Model $model)
+    {
+        $this->model = $model;
+    }
 
     /**
      * @return object|null
@@ -85,20 +92,36 @@ class Database extends Connection
             $query = $this->getQueryString();
         }
         $queryString = $this->normalizeQueryString($query);
-        try {
+        try 
+        {
             $statement = $this->pdo->prepare($query);
-
             $this->bindValues($statement);
-
             $statement->execute();
-
+            $model = $this->model;
             $this->reset();
-
             if ($statement->rowCount() > 0) {
-                return $first ? $statement->fetch($fetch) : $statement->fetchAll($fetch);
+                if ($model) {
+                    $statement->setFetchMode(PDO::FETCH_INTO, $model);
+                    if ($first) {
+                        return $statement->fetch();
+                    } else {
+                        $result = [];
+                        foreach ($statement->fetchAll($fetch) as $data) {
+                            $result[] = clone $model->setAttributes($data);
+                        }
+                        return $result;
+                    }
+                } else {
+                    if ($first) {
+                        return $statement->fetch($fetch);
+                    } else {
+                        return $statement->fetchAll($fetch);
+                    }
+                }
             }
-            return null;
-        } catch (\PDOException $e) {
+        } 
+        catch (\PDOException $e) 
+        {
             throw new DatabaseException($e->getMessage(), $queryString);
         }
     }
@@ -418,6 +441,7 @@ class Database extends Connection
         $this->join = [];
         $this->table = null;
         $this->database = null;
+        $this->model = null;
 
         return $this;
     }
