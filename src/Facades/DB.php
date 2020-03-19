@@ -10,6 +10,7 @@
  * @method static get()
  * @method static exec(string $query)
  * @method static check()
+ * @method static setModel(\TT\Libraries\Database\Model $getInstance)
  */
 use TT\Engine\App;
 

@@ -4,6 +4,7 @@ trait HasMany
 {
     public function hasMany($model, $foreign_key)
     {
-        return (new $model)->where($foreign_key, $this[$this->primaryKey]);
+        /**@var $model \TT\Libraries\Database\Model*/
+        return $model::where($foreign_key, $this[$this->primaryKey]);
     }
 }

@@ -24,11 +24,13 @@ class Database extends Connection
 
     private $table;
 
+    private $database;
+
     private $select = [];
 
-    private $where = [];
+    private $where  = [];
 
-    private $limit = [];
+    private $limit  = [];
 
     private $orderBy = [];
 
@@ -36,15 +38,15 @@ class Database extends Connection
 
     private $join = [];
 
-    private $database;
-
     private $bindValues = [];
 
     private $model;
 
 
-
-    public function setModel(Model $model)
+    /**
+     * @param Model $model
+     */
+    public function setModel(Model $model):void
     {
         $this->model = $model;
     }
@@ -54,7 +56,6 @@ class Database extends Connection
      * @param string $sql
      * @param array $data
      */
-
     public function raw(string $sql, array $data = [])
     {
         if (empty($data)) {
@@ -80,8 +81,8 @@ class Database extends Connection
 
     /**
      * @param bool $first
-     * @param int $fetch
-     * @return object|null
+     * @param int $fetch_mode
+     * @return object|array|null
      * @throws DatabaseException
      */
     public function get($first = false, $fetch_mode = null)
@@ -102,20 +103,17 @@ class Database extends Connection
                     if ($first) {
                         $statement->setFetchMode(PDO::FETCH_INTO, $model);
                         return $statement->fetch();
-                    } else {
-                        $result = [];
-                        foreach ($statement->fetchAll(PDO::FETCH_OBJ) as $data) {
-                            $result[] = clone $model->setAttributes($data);
-                        }
-                        return $result;
                     }
-                } else {
-                    if ($first) {
-                        return $statement->fetch($fetch_mode);
-                    } else {
-                        return $statement->fetchAll($fetch_mode);
+                    $result = [];
+                    foreach ($statement->fetchAll(PDO::FETCH_OBJ) as $data) {
+                        $result[] = clone $model->setAttributes($data);
                     }
+                    return $result;
                 }
+                if ($first) {
+                    return $statement->fetch($fetch_mode);
+                }
+                return $statement->fetchAll($fetch_mode);
             }
         } 
         catch (\PDOException $e) 
@@ -128,13 +126,13 @@ class Database extends Connection
     /**
      * @return string
      */
-    public function getQueryString()
+    public function getQueryString(): string
     {
         if (empty($this->select)) {
-            $this->select[] = "*";
+            $this->select[] = '*';
         }
 
-        $query = "SELECT " . implode(',', $this->select) . " FROM " . $this->table . " ";
+        $query = 'SELECT ' . implode(',', $this->select) . ' FROM ' . $this->table . ' ';
 
         $query .= implode(' ', array_merge(
             $this->join,
@@ -147,6 +145,10 @@ class Database extends Connection
         return $query;
     }
 
+    /**
+     * @param $query
+     * @return mixed
+     */
     private function normalizeQueryString($query)
     {
         foreach ($this->bindValues as $value) {
@@ -158,7 +160,10 @@ class Database extends Connection
         return $query;
     }
 
-    public function bindValues(PDOStatement $statement)
+    /**
+     * @param PDOStatement $statement
+     */
+    public function bindValues(PDOStatement $statement): void
     {
         foreach ($this->bindValues as $key => $value) {
             $statement->bindValue(
@@ -170,41 +175,69 @@ class Database extends Connection
     }
 
 
-    public function transaction(\Closure $callback)
+    /**
+     * @param \Closure $callback
+     * @return Database
+     */
+    public function transaction(\Closure $callback = null) : Database
     {
         $this->pdo->beginTransaction();
 
-        call_user_func($callback, $this);
-    }
+        if ($callback) {
+            $callback($this);
+        }
 
-
-    public function table(String $table)
-    {
-        $this->table = $this->config[$this->group]['prefix'] . $table;
         return $this;
     }
 
-    public function database(String $database)
+
+    /**
+     * @param String $table
+     * @return $this
+     */
+    public function table(String $table): Database
+    {
+        $this->table = $this->config[$this->group]['prefix'] . $table;
+
+        return $this;
+    }
+
+    /**
+     * @param String $database
+     * @return $this
+     */
+    public function database(String $database): Database
     {
         $this->database = $database;
         return $this;
     }
 
+    /**
+     * @param bool $first
+     * @return array|object|null
+     */
     public function toArray($first = false)
     {
         return $this->get($first, PDO::FETCH_ASSOC);
     }
 
+    /**
+     * @param bool $first
+     * @return false|string|null
+     */
     public function toJson($first = false)
     {
         if (($result = $this->toArray($first))) {
             return json_encode($result);
-        } else {
-            return null;
         }
+        return null;
     }
 
-    public function select($select)
+    /**
+     * @param $select
+     * @return $this
+     */
+    public function select($select): Database
     {
         if (is_array($select)) {
             $select = implode(',', $select);
@@ -215,143 +248,82 @@ class Database extends Connection
         return $this;
     }
 
-    public function limit($limit, $offset = 0)
+    /**
+     * @param $limit
+     * @param int $offset
+     * @return Database
+     */
+    public function limit($limit, $offset = 0):Database
     {
         $this->limit[] = ' LIMIT ' . $offset . ',' . $limit;
+
         return $this;
     }
 
-    public function orderBy($column, $sort = 'ASC')
+    /**
+     * @param $column
+     * @param string $sort
+     * @return $this
+     */
+    public function orderBy($column, $sort = 'ASC'): Database
     {
-        $this->orderBy[] = " ORDER BY " . $column . " " . strtoupper($sort);
+        $this->orderBy[] = ' ORDER BY ' . $column . ' ' . strtoupper($sort);
+
         return $this;
     }
 
-    public function orderByRand()
+    /**
+     * @return Database
+     */
+    public function orderByRand(): Database
     {
-        $this->orderBy[] = " ORDER BY RAND() ";
+        $this->orderBy[] = ' ORDER BY RAND() ';
+
         return $this;
     }
 
-    public function groupBy($column)
+    /**
+     * @param $column
+     * @return $this
+     */
+    public function groupBy($column): Database
     {
         $this->groupBy[] = ' GROUP BY ' . $column;
         return $this;
     }
 
 
-    private function normalizeCrud($data)
+    /**
+     * @param $data
+     * @return string
+     */
+    private function normalizeCrud($data): string
     {
-        return implode(',', array_map(function ($item) {
-            return $item . "=?";
+        return implode(',', array_map(static function ($item) {
+            return $item . '=?';
         }, array_keys($data)));
     }
 
-
-    /**
-     * @param string $tables
-     * @return bool
-     * @internal param $table
-     */
-    public function optimizeTables($tables = '*')
-    {
-        if (trim($tables) == '*') {
-            $tables = $this->showTables();
-        } else {
-            if (is_array($tables)) {
-                $tables = array_map(function ($item) {
-                    return $this->config[$this->group]['prefix'] . $item;
-                }, $tables);
-            } else {
-                $tables = explode(',', $tables);
-                $tables = array_map(function ($item) {
-                    return $this->config[$this->group]['prefix'] . $item;
-                }, $tables);
-            }
-        }
-
-        $success = true;
-
-        foreach ($tables as $table) {
-            $success = ($this->pdo->exec("OPTIMIZE TABLE {$table}") === false);
-        }
-
-        return $success;
-    }
 
     /**
      * @return array|bool
      */
     public function showTables()
     {
-        $result = $this->pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_ASSOC);
+        $result = $this->pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_ASSOC);
 
         return array_map(function ($item) {
             return array_values($item)[0];
         }, $result);
     }
 
-    /**
-     * @param $tables
-     * @return Bool
-     */
-    public function repairTables($tables = '*')
-    {
-        if ($this->table == '') {
-            if (trim($tables) == '*') {
-                $tables = $this->showTables();
-            } else {
-                if (is_array($tables)) {
-                    $tables = array_map(function ($item) {
-                        return $this->config[$this->group]['prefix'] . $item;
-                    }, $tables);
-                } else {
-                    $tables = explode(',', $tables);
-
-                    $tables = array_map(function ($item) {
-                        return $this->config[$this->group]['prefix'] . $item;
-                    }, $tables);
-                }
-            }
-        } else {
-            $tables = array($this->table);
-        }
-
-        $success = true;
-
-        foreach ($tables as $table) {
-            $success = $this->pdo->exec("REPAIR TABLE {$table}") === false ? false : true;
-        }
-
-        return $success;
-    }
-
-    /**
-     * Drop Table or database
-     * @return bool
-     * @throws DatabaseException
-     */
-    public function drop()
-    {
-        $drop = !is_null($this->table) ? " TABLE " : $this->database ? " DATABASE " : "";
-
-        $item = !is_null($this->table) ? $this->table : $this->database ? " DATABASE " : "";
-
-        $queryString = "DROP {$drop} IF EXISTS {$item}";
-
-        try {
-            return ($this->pdo->exec($queryString) === false);
-        } catch (\PDOException $e) {
-            throw new DatabaseException($e->getMessage(), $queryString);
-        }
-    }
 
     /**
      * Truncate table
      * @return bool
      * @throws DatabaseException
      */
-    public function truncate()
+    public function truncate(): ?bool
     {
         $queryString = "TRUNCATE TABLE IF EXISTS {$this->table} ";
 
@@ -363,7 +335,7 @@ class Database extends Connection
     }
 
     /**
-     * @return null|object
+     * @return null|object|array
      * @throws DatabaseException
      */
     public function tables()
@@ -416,25 +388,11 @@ class Database extends Connection
         return null;
     }
 
+
     /**
-     * @param $data
-     * @return string
+     * @return $this
      */
-    public function escape($data)
-    {
-        if (is_array($data)) {
-            foreach ($data as $key => $value) {
-                $data[$key] = $this->pdo->quote(trim($value));
-            }
-        } else {
-            $data = $this->pdo->quote(trim($data));
-        }
-
-        return $data;
-    }
-
-
-    public function reset()
+    public function reset(): Database
     {
         $this->bindValues = [];
         $this->select = [];
@@ -452,24 +410,19 @@ class Database extends Connection
 
     public function __call($method, $args)
     {
+        if(stripos($method, 'where') === 0) {
+            $column = substr($method,5);
+            if($column !== '') {
+                return $this->where($column,$args[0] ??  false);
+            }
+        }
         return $this->pdo->$method(...$args);
     }
 
-
-    public function __toString()
-    {
-        if (!is_null($this->queryString)) {
-            return $this->queryString;
-        } else {
-            return 'Database Library';
-        }
-    }
 
 
     public function __clone()
     {
         $this->reset();
-
-        return clone $this;
     }
 }

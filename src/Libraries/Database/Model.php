@@ -57,6 +57,9 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     }
 
 
+    /**
+     * @return bool
+     */
     protected function isBooted(): bool
     {
         return isset(self::$models[static::class]);
@@ -80,10 +83,13 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         return false;
     }
 
-    public function delete()
+    /**
+     * @return bool
+     */
+    public function delete(): bool
     {
         $pk = $this->getAttribute($this->getPrimaryKey());
-        $delete = null;
+        $delete = false;
         if ($pk) {
             $delete = self::destroy($pk);
             unset($this[$this->getPrimaryKey()]);
@@ -138,7 +144,11 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     }
 
 
-    public static function destroy($primaryKey)
+    /**
+     * @param $primaryKey
+     * @return bool
+     */
+    public static function destroy($primaryKey):bool
     {
         $pk = self::getInstance()->primaryKey;
         if ($pk === null) {
@@ -168,6 +178,10 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     }
 
 
+    /**
+     * @param $key
+     * @return mixed|Model
+     */
     public function setPrimaryKey($key)
     {
         self::getInstance()->primaryKey = $key;
@@ -175,18 +189,28 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         return self::getInstance();
     }
 
-    public function getPrimaryKey()
+    /**
+     * @return string
+     */
+    public function getPrimaryKey(): string
     {
         return self::getInstance()->primaryKey;
     }
 
 
+    /**
+     * @return mixed
+     */
     public static function getTable()
     {
         return self::getInstance()->table;
     }
 
 
+    /**
+     * @param $table
+     * @return mixed|Model
+     */
     protected function setTable($table)
     {
         self::getInstance()->table = $table;
@@ -194,6 +218,10 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         return self::getInstance();
     }
 
+    /**
+     * @param $name
+     * @return mixed
+     */
     public function getAttribute($name)
     {
         if (isset(self::getInstance()->attributes[$name])) {
@@ -205,11 +233,19 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         return null;
     }
 
+    /**
+     * @param $name
+     * @param $value
+     */
     public function setAttribute($name, $value)
     {
         self::getInstance()->attributes[$name] = $value;
     }
 
+    /**
+     * @param $attributes
+     * @return mixed|Model
+     */
     public function setAttributes($attributes)
     {
         self::getInstance()->attributes = (array) $attributes;
@@ -218,26 +254,40 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     }
 
 
+    /**
+     * @return array
+     */
     public function getAttributes(): array
     {
         return self::getInstance()->attributes;
     }
 
+    /**
+     * @return Database
+     */
     public static function getQuery(): Database
     {
         return DB::table(self::getTable());
     }
 
+    /**
+     * @return mixed|Model
+     */
     public static function getInstance()
     {
         return self::$models[static::class] ?? new static();
     }
 
+    /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
     private function callCustomMethod($name, $arguments)
     {
-        if(substr(strtolower($name),0,6) === 'findby') {
+        if(stripos($name, 'findby') === 0) {
             $column = substr($name,6);
-            if(strlen($column) > 0) {
+            if($column !== '') {
                 return static::find([$column => $arguments[0] ?? null]);
             }
         }
@@ -247,12 +297,22 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     }
 
 
+    /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
     public function __call($name, $arguments)
     {
         return $this->callCustomMethod($name, $arguments);
     }
 
 
+    /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
     public static function __callStatic($name, $arguments)
     {
         return self::getInstance()->callCustomMethod($name, $arguments);
@@ -268,6 +328,10 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         $this->setAttribute($column, $value);
     }
 
+    /**
+     * @param $name
+     * @return bool
+     */
     public function __isset($name)
     {
         return array_key_exists($name, $this->getAttributes());
@@ -282,6 +346,9 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         return $this->getAttribute($column);
     }
 
+    /**
+     * @return false|string
+     */
     public function __toString()
     {
         return json_encode(self::getAttributes());

@@ -3,10 +3,12 @@
 
 namespace TT\Libraries\Database\Relations;
 
+
 trait BelongsTo
 {
-    public function belongsTo(string $model, $foreing_key)
+    public function belongsTo($model, $foreign_key)
     {
-        return $model::find($this[$foreing_key]);
+        /**@var $model \TT\Libraries\Database\Model*/
+        return $model::find($this[$foreign_key]);
     }
 }
