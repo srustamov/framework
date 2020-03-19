@@ -235,6 +235,12 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
 
     private function callCustomMethod($name, $arguments)
     {
+        if(substr(strtolower($name),0,6) === 'findby') {
+            $column = substr($name,6);
+            if(strlen($column) > 0) {
+                return static::find([$column => $arguments[0] ?? null]);
+            }
+        }
         $select = self::getInstance()->select ?? '*';
 
         return self::getQuery()->select($select)->{$name}(...$arguments);
