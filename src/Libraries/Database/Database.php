@@ -84,14 +84,12 @@ class Database extends Connection
      * @return object|null
      * @throws DatabaseException
      */
-    public function get($first = false, $fetch = PDO::FETCH_OBJ)
+    public function get($first = false, $fetch_mode = null)
     {
-        if (empty($this->limit)) {
-            $query = $this->getQueryString() . ($first ? ' LIMIT 1' : '');
-        } else {
-            $query = $this->getQueryString();
-        }
+        $query = $this->getQueryString() . ((empty($this->limit) && $first) ? ' LIMIT 1' : '');
+
         $queryString = $this->normalizeQueryString($query);
+
         try 
         {
             $statement = $this->pdo->prepare($query);
@@ -100,22 +98,22 @@ class Database extends Connection
             $model = $this->model;
             $this->reset();
             if ($statement->rowCount() > 0) {
-                if ($model) {
-                    $statement->setFetchMode(PDO::FETCH_INTO, $model);
+                if ($model && !$fetch_mode) {
                     if ($first) {
+                        $statement->setFetchMode(PDO::FETCH_INTO, $model);
                         return $statement->fetch();
                     } else {
                         $result = [];
-                        foreach ($statement->fetchAll($fetch) as $data) {
+                        foreach ($statement->fetchAll(PDO::FETCH_OBJ) as $data) {
                             $result[] = clone $model->setAttributes($data);
                         }
                         return $result;
                     }
                 } else {
                     if ($first) {
-                        return $statement->fetch($fetch);
+                        return $statement->fetch($fetch_mode);
                     } else {
-                        return $statement->fetchAll($fetch);
+                        return $statement->fetchAll($fetch_mode);
                     }
                 }
             }
@@ -138,7 +136,13 @@ class Database extends Connection
 
         $query = "SELECT " . implode(',', $this->select) . " FROM " . $this->table . " ";
 
-        $query .= implode(' ', array_merge($this->join, $this->where, $this->orderBy, $this->groupBy, $this->limit));
+        $query .= implode(' ', array_merge(
+            $this->join,
+            $this->where,
+            $this->orderBy,
+            $this->groupBy,
+            $this->limit)
+        );
 
         return $query;
     }

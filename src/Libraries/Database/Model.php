@@ -1,4 +1,6 @@
-<?php namespace TT\Libraries\Database;
+<?php
+
+namespace TT\Libraries\Database;
 
 /**
  * @author  Samir Rustamov <rustemovv96@gmail.com>
@@ -15,9 +17,9 @@ use JsonSerializable;
 use Countable;
 use App\Exceptions\ModelNotFoundException;
 
-class Model implements ArrayAccess, JsonSerializable, Countable
+abstract class Model implements ArrayAccess, JsonSerializable, Countable
 {
-    use Relations\HasMany,Relations\BelongsTo;
+    use Relations\HasMany, Relations\BelongsTo;
 
     protected static $models = [];
 
@@ -45,8 +47,7 @@ class Model implements ArrayAccess, JsonSerializable, Countable
 
         if ($model->table === null) {
             $called_class = explode('\\', static::class);
-
-            $this->table = strtolower(array_pop($called_class)) . 's';
+            $model->table = strtolower(array_pop($called_class)) . 's';
         }
         if ($model->primaryKey === null) {
             $model->primaryKey = 'id';
@@ -70,17 +71,11 @@ class Model implements ArrayAccess, JsonSerializable, Countable
         if (!empty($this->getAttributes())) {
             $pk = self::getInstance()->primaryKey;
             if (array_key_exists($pk, $this->getAttributes())) {
-                /**@var $query Database */
-                $query = DB::table(self::getTable());
-
-                $query->where($pk, $this->getAttribute($pk));
-
-                $return = $query->update(Arr::except($this->getAttributes(), [$pk]));
-            } else {
-                $return = static::create($this->getAttributes());
+                return self::getQuery()
+                    ->where($pk, $this->getAttribute($pk))
+                    ->update(Arr::except($this->getAttributes(), [$pk]));
             }
-
-            return $return;
+            static::create($this->getAttributes());
         }
         return false;
     }
@@ -118,23 +113,16 @@ class Model implements ArrayAccess, JsonSerializable, Countable
         if ($pk === null) {
             throw new RuntimeException('No primary key defined on model.');
         }
-
         if (is_array($primaryKey) && Arr::isAssoc($primaryKey)) {
             $where = $primaryKey;
-        } else {
+        } elseif (!is_array($primaryKey)){
             $where = [$pk => $primaryKey];
+        } else {
+            throw new RuntimeException('Key type undefined!');
         }
         $select = self::getInstance()->select ?? '*';
 
-        $result = self::getQuery()->select($select)->where($where)->first();
-
-        if (!$result) {
-            return null;
-        }
-
-        // self::getInstance()->setAttributes((array)$result);
-
-        return self::getInstance();
+        return self::getQuery()->select($select)->where($where)->first();
     }
 
 
@@ -143,18 +131,19 @@ class Model implements ArrayAccess, JsonSerializable, Countable
         if ($model = self::find(...$args)) {
             return $model;
         }
-        throw new ModelNotFoundException;
+        if (class_exists(ModelNotFoundException::class)) {
+            throw new ModelNotFoundException;
+        }
+        abort(404);
     }
 
 
     public static function destroy($primaryKey)
     {
         $pk = self::getInstance()->primaryKey;
-
         if ($pk === null) {
             throw new RuntimeException('No primary key defined on model.');
         }
-
         /**@var $query Database */
         $query = self::getQuery();
 
@@ -207,10 +196,10 @@ class Model implements ArrayAccess, JsonSerializable, Countable
 
     public function getAttribute($name)
     {
-        if(isset(self::getInstance()->attributes[$name])) {
+        if (isset(self::getInstance()->attributes[$name])) {
             return self::getInstance()->attributes[$name];
         }
-        if(method_exists(self::getInstance(),$name)) {
+        if (method_exists(self::getInstance(), $name)) {
             return self::getInstance()->$name();
         }
         return null;
@@ -285,6 +274,11 @@ class Model implements ArrayAccess, JsonSerializable, Countable
     public function __get($column)
     {
         return $this->getAttribute($column);
+    }
+
+    public function __toString()
+    {
+        return json_encode(self::getAttributes());
     }
 
 
