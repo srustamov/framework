@@ -76,7 +76,7 @@ class Session implements ArrayAccess, Countable
     }
 
 
-    public function isStarted() :bool
+    public function isStarted(): bool
     {
         return !(session_status() === PHP_SESSION_NONE);
     }
@@ -129,9 +129,8 @@ class Session implements ArrayAccess, Countable
     /**
      * @param $key
      * @param null $default
-     * @return mixin
+     * @return mixed
      */
-
     public function get($key, $default = null)
     {
         if (isset($_SESSION[$key])) {
@@ -139,10 +138,10 @@ class Session implements ArrayAccess, Countable
         }
 
         if ($default instanceof Closure) {
-            $default = call_user_func($default, $this);
+            return $default($this);
         }
 
-        return $_SESSION[$key] ?? $default;
+        return $default;
     }
 
 
@@ -170,7 +169,7 @@ class Session implements ArrayAccess, Countable
      * @param array $data
      * @return Session
      */
-    public function setArray(array $data):Session
+    public function setArray(array $data): Session
     {
         foreach ($data as $key => $value) {
             $this->set($key, $value);
@@ -207,7 +206,7 @@ class Session implements ArrayAccess, Countable
     public function delete($key): Session
     {
         if ($key instanceof Closure) {
-            $this->delete(call_user_func($key, $this));
+            $this->delete($key($this));
         } elseif (is_array($key)) {
             foreach ($key as $value) {
                 $this->delete($value);
@@ -220,7 +219,7 @@ class Session implements ArrayAccess, Countable
     }
 
 
-    public function regenerate():Session
+    public function regenerate(): Session
     {
         session_regenerate_id(true);
         return $this;
@@ -303,7 +302,7 @@ class Session implements ArrayAccess, Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value):void
     {
         $this->set($offset, $value);
     }
@@ -317,7 +316,7 @@ class Session implements ArrayAccess, Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset) : void
     {
         $this->delete($offset);
     }
@@ -334,7 +333,7 @@ class Session implements ArrayAccess, Countable
      * The return value will be casted to boolean if non-boolean was returned.
      * @since 5.0.0
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return $this->has($offset);
     }
@@ -348,7 +347,7 @@ class Session implements ArrayAccess, Countable
      * The return value is cast to an integer.
      * @since 5.1.0
      */
-    public function count()
+    public function count() :int
     {
         return count($this->all());
     }

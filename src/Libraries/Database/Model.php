@@ -9,51 +9,63 @@ namespace TT\Libraries\Database;
 
 
 
-use RuntimeException;
 use TT\Facades\DB;
-use TT\Libraries\Arr;
 use ArrayAccess;
 use JsonSerializable;
 use Countable;
-use App\Exceptions\ModelNotFoundException;
+use TT\Libraries\Database\Relations\Relation;
 
+
+/**
+ * @method static where($foreign_key, $primaryKey):Database
+ * @method static get($first)
+ * @method static create($data)
+ * @method static save()
+ * @method static delete()
+ * @method static destroy($key)
+ * @method static first()
+ * @method static find($primaryKey)
+ * @method static findOrFail($primaryKey)
+ */
 abstract class Model implements ArrayAccess, JsonSerializable, Countable
 {
-    use Relations\HasMany, Relations\BelongsTo;
 
-    protected static $models = [];
+    private static $models = [];
 
-    protected $attributes = [];
+    private $attributes = [];
 
     protected $table;
 
-    protected $select = ['*'];
-
     protected $primaryKey = 'id';
 
+    public $eager = [];
 
+
+    /**
+     * Model constructor.
+     */
     public function __construct()
     {
         if (!$this->isBooted()) {
             $this->boot();
         }
-        DB::setModel(self::getInstance());
     }
 
 
     protected function boot()
     {
-        $model = $this;
-
-        if ($model->table === null) {
+        if ($this->table === null) {
             $called_class = explode('\\', static::class);
-            $model->table = strtolower(array_pop($called_class)) . 's';
+            $this->table = strtolower(array_pop($called_class)) . 's';
         }
-        if ($model->primaryKey === null) {
-            $model->primaryKey = 'id';
+        if ($this->primaryKey === null) {
+            $this->primaryKey = 'id';
         }
 
-        self::$models[static::class] = $model;
+        self::$models[static::class] = [
+            'table' => $this->table,
+            'primaryKey' => $this->primaryKey
+        ];
     }
 
 
@@ -67,126 +79,14 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
 
 
     /**
-     * @return bool
-     */
-    public function save(): Bool
-    {
-        if (!empty($this->getAttributes())) {
-            $pk = self::getInstance()->primaryKey;
-            if (array_key_exists($pk, $this->getAttributes())) {
-                return self::getQuery()
-                    ->where($pk, $this->getAttribute($pk))
-                    ->update(Arr::except($this->getAttributes(), [$pk]));
-            }
-            static::create($this->getAttributes());
-        }
-        return false;
-    }
-
-    /**
-     * @return bool
-     */
-    public function delete(): bool
-    {
-        $pk = $this->getAttribute($this->getPrimaryKey());
-        $delete = false;
-        if ($pk) {
-            $delete = self::destroy($pk);
-            unset($this[$this->getPrimaryKey()]);
-        }
-        return $delete;
-    }
-
-    /**
-     * @param array $data
-     * @return bool
-     */
-    public static function create(array $data): Bool
-    {
-        return self::getQuery()->insert($data);
-    }
-
-
-    /**
-     * @param array|int $primaryKey
-     * @return mixed
-     * @internal param $pk
-     */
-    public static function find($primaryKey)
-    {
-        $pk = self::getInstance()->primaryKey;
-
-        if ($pk === null) {
-            throw new RuntimeException('No primary key defined on model.');
-        }
-        if (is_array($primaryKey) && Arr::isAssoc($primaryKey)) {
-            $where = $primaryKey;
-        } elseif (!is_array($primaryKey)){
-            $where = [$pk => $primaryKey];
-        } else {
-            throw new RuntimeException('Key type undefined!');
-        }
-        $select = self::getInstance()->select ?? '*';
-
-        return self::getQuery()->select($select)->where($where)->first();
-    }
-
-
-    public static function findOrFail(...$args)
-    {
-        if ($model = self::find(...$args)) {
-            return $model;
-        }
-        if (class_exists(ModelNotFoundException::class)) {
-            throw new ModelNotFoundException;
-        }
-        abort(404);
-    }
-
-
-    /**
-     * @param $primaryKey
-     * @return bool
-     */
-    public static function destroy($primaryKey):bool
-    {
-        $pk = self::getInstance()->primaryKey;
-        if ($pk === null) {
-            throw new RuntimeException('No primary key defined on model.');
-        }
-        /**@var $query Database */
-        $query = self::getQuery();
-
-        if (is_array($primaryKey)) {
-            $query->whereIn($pk, $primaryKey);
-        } else {
-            $query->where($pk, $primaryKey);
-        }
-
-        return $query->delete();
-    }
-
-    /**
-     * @param $select
-     * @return mixed
-     */
-    public static function all($select = null)
-    {
-        $select = $select ?? self::getInstance()->select ?? '*';
-
-        return self::getQuery()->select($select)->get();
-    }
-
-
-    /**
      * @param $key
      * @return mixed|Model
      */
     public function setPrimaryKey($key)
     {
-        self::getInstance()->primaryKey = $key;
+        self::$models[static::class]['primaryKey'] = $key;
 
-        return self::getInstance();
+        return $this;
     }
 
     /**
@@ -194,29 +94,18 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function getPrimaryKey(): string
     {
-        return self::getInstance()->primaryKey;
+        return self::$models[static::class]['primaryKey'];
     }
 
 
     /**
      * @return mixed
      */
-    public static function getTable()
+    public function getTable()
     {
-        return self::getInstance()->table;
+        return self::$models[static::class]['table'];
     }
 
-
-    /**
-     * @param $table
-     * @return mixed|Model
-     */
-    protected function setTable($table)
-    {
-        self::getInstance()->table = $table;
-
-        return self::getInstance();
-    }
 
     /**
      * @param $name
@@ -224,13 +113,18 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function getAttribute($name)
     {
-        if (isset(self::getInstance()->attributes[$name])) {
-            return self::getInstance()->attributes[$name];
+        if (isset($this->attributes[$name])) {
+            return $this->attributes[$name];
         }
-        if (method_exists(self::getInstance(), $name)) {
-            return self::getInstance()->$name();
+        if (method_exists($this,$name)) {
+            $relation = $this->$name();
+            if($relation instanceof Relation) {
+                return $this->$name()->_load();
+            }
+            return $relation;
         }
         return null;
+
     }
 
     /**
@@ -239,7 +133,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function setAttribute($name, $value)
     {
-        self::getInstance()->attributes[$name] = $value;
+        $this->attributes[$name] = $value;
     }
 
     /**
@@ -248,9 +142,9 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function setAttributes($attributes)
     {
-        self::getInstance()->attributes = (array) $attributes;
+        $this->attributes = (array) $attributes;
 
-        return self::getInstance();
+        return $this;
     }
 
 
@@ -259,23 +153,24 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function getAttributes(): array
     {
-        return self::getInstance()->attributes;
+        return $this->attributes;
     }
 
     /**
      * @return Database
      */
-    public static function getQuery(): Database
+    public function getQuery(): Database
     {
-        return DB::table(self::getTable());
+        return DB::setModel($this)->table($this->getTable());
     }
 
+
     /**
-     * @return mixed|Model
+     * @return ModelBuilder
      */
-    public static function getInstance()
+    public function getBuilder(): ModelBuilder
     {
-        return self::$models[static::class] ?? new static();
+        return new ModelBuilder($this);
     }
 
     /**
@@ -285,15 +180,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     private function callCustomMethod($name, $arguments)
     {
-        if(stripos($name, 'findby') === 0) {
-            $column = substr($name,6);
-            if($column !== '') {
-                return static::find([$column => $arguments[0] ?? null]);
-            }
-        }
-        $select = self::getInstance()->select ?? '*';
-
-        return self::getQuery()->select($select)->{$name}(...$arguments);
+        return $this->getBuilder()->{$name}(...$arguments);
     }
 
 
@@ -315,7 +202,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public static function __callStatic($name, $arguments)
     {
-        return self::getInstance()->callCustomMethod($name, $arguments);
+        return (new static)->$name(...$arguments);
     }
 
 
@@ -347,11 +234,28 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     }
 
     /**
-     * @return false|string
+     * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
-        return json_encode(self::getAttributes());
+        return json_encode($this->getAttributes());
+    }
+
+    /**
+     * Clone Model Class
+     */
+    public function __clone()
+    {
+        $this->setAttributes([]);
+    }
+
+
+    /**
+     * @return array
+     */
+    public function toArray(): array
+    {
+        return $this->getAttributes();
     }
 
 
@@ -381,7 +285,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         $this->setAttribute($offset, $value);
     }
@@ -395,10 +299,10 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         if (array_key_exists($offset, $this->getAttributes())) {
-            unset(self::getInstance()->attributes[$offset]);
+            unset($this->attributes[$offset]);
         }
     }
 
@@ -443,7 +347,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      * The return value is cast to an integer.
      * @since 5.1.0
      */
-    public function count()
+    public function count():int
     {
         return count($this->getAttributes());
     }

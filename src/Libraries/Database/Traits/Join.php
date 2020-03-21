@@ -7,28 +7,57 @@
  * @subpackage    Library
  * @category    Database
  */
+trait Join
+{
+    /**
+     * @param String $table
+     * @param $opt
+     * @return Join
+     */
+    public function leftJoin(String $table, $opt): Join
+    {
+        return $this->join($table, $opt, 'LEFT');
+    }
 
+    /**
+     * @param String $table
+     * @param $opt
+     * @return Join
+     */
+    public function innerJoin(String $table, $opt): Join
+    {
+        return $this->join($table, $opt);
+    }
 
- trait Join
- {
-     public function leftJoin(String $table, $opt)
-     {
-         return $this->join($table, $opt, 'LEFT');
-     }
+    /**
+     * @param String $table
+     * @param $opt
+     * @param string $join
+     * @return $this
+     */
+    public function join(String $table, $opt, $join = 'INNER'): self
+    {
+        $this->join[] = strtoupper($join) . ' JOIN ' . $this->config[$this->group]['prefix'] . $table . ' ON ' . $opt . ' ';
+        return $this;
+    }
 
-     public function join(String $table, $opt, $join = 'INNER')
-     {
-         $this->join[] = strtoupper($join) . ' JOIN ' . $this->config[$this->group]['prefix'] . $table . ' ON ' . $opt . ' ';
-         return $this;
-     }
+    /**
+     * @param String $table
+     * @param $opt
+     * @return Join
+     */
+    public function rightJoin(String $table, $opt): Join
+    {
+        return $this->join($table, $opt, 'RIGHT');
+    }
 
-     public function rightJoin(String $table, $opt)
-     {
-         return $this->join($table, $opt, 'RIGHT');
-     }
-
-     public function fullJoin(String $table, $opt)
-     {
-         return $this->join($table, $opt, 'FULL');
-     }
- }
+    /**
+     * @param String $table
+     * @param $opt
+     * @return Join
+     */
+    public function fullJoin(String $table, $opt): Join
+    {
+        return $this->join($table, $opt, 'FULL');
+    }
+}

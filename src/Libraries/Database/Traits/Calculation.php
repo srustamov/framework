@@ -11,32 +11,43 @@
 
  trait Calculation
  {
-     public function count($column = false)
+     /**
+      * @param string $column
+      * @return int|null
+      */
+     public function count(string $column = null): ?int
      {
-         $column = $column ? $column : implode('', $this->select);
+         $column = $column ?? implode('', $this->select);
 
          $this->select = array("COUNT({$column}) as count");
 
          if ($result = $this->get(true)) {
              return (int)$result->count;
-         } else {
-             return null;
          }
+
+         return null;
      }
 
-     public function min(string $column)
+     /**
+      * @param string $column
+      * @return int|null
+      */
+     public function min(string $column): ?int
      {
          $as_name = 'min_'.$column;
          $this->select = array("MIN({$column}) as {$as_name}");
 
          if ($result = $this->get(true)) {
              return (int) $result->$as_name;
-         } else {
-             return null;
          }
+         return null;
      }
 
-     public function max(string $column)
+     /**
+      * @param string $column
+      * @return int|null
+      */
+     public function max(string $column): ?int
      {
          $as_name = 'min_'.$column;
 
@@ -44,34 +55,39 @@
 
          if ($result = $this->get(true)) {
              return (int) $result->$as_name;
-         } else {
-             return null;
          }
+         return null;
      }
 
-     public function avg($column = false)
+     /**
+      * @param string $column
+      * @return mixed
+      */
+     public function avg(string $column = null)
      {
-         $column = $column ? $column : implode('', $this->select);
+         $column = $column ?? implode('', $this->select);
 
          $this->select = array("AVG({$column}) as avg");
 
          if ($result = $this->get(true)) {
              return $result->avg;
-         } else {
-             return null;
          }
+         return null;
      }
 
-     public function sum($column = false)
+     /**
+      * @param string|null $column
+      * @return mixed
+      */
+     public function sum(string $column = null)
      {
-         $column = $column ? $column : implode('', $this->select);
+         $column = $column ?? implode('', $this->select);
 
          $this->select = array("SUM({$column}) as sum");
 
          if ($result = $this->get(true)) {
              return $result->sum;
-         } else {
-             return null;
          }
+         return null;
      }
  }

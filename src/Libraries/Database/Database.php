@@ -11,7 +11,9 @@ namespace TT\Libraries\Database;
  */
 
 
+use Closure;
 use PDO;
+use PDOException;
 use PDOStatement;
 use TT\Exceptions\DatabaseException;
 
@@ -28,9 +30,9 @@ class Database extends Connection
 
     private $select = [];
 
-    private $where  = [];
+    private $where = [];
 
-    private $limit  = [];
+    private $limit = [];
 
     private $orderBy = [];
 
@@ -42,19 +44,25 @@ class Database extends Connection
 
     private $model;
 
+    private $with = [];
+
 
     /**
      * @param Model $model
+     * @return Database
      */
-    public function setModel(Model $model):void
+    public function setModel(Model $model): Database
     {
         $this->model = $model;
+
+        return $this;
     }
 
+
     /**
-     * @return object|null
      * @param string $sql
      * @param array $data
+     * @return object|null
      */
     public function raw(string $sql, array $data = [])
     {
@@ -81,45 +89,70 @@ class Database extends Connection
 
     /**
      * @param bool $first
-     * @param int $fetch_mode
+     * @param null $fetch_style
      * @return object|array|null
-     * @throws DatabaseException
      */
-    public function get($first = false, $fetch_mode = null)
+    public function get($first = false, $fetch_style = null)
     {
         $query = $this->getQueryString() . ((empty($this->limit) && $first) ? ' LIMIT 1' : '');
 
         $queryString = $this->normalizeQueryString($query);
 
-        try 
-        {
+        try {
             $statement = $this->pdo->prepare($query);
             $this->bindValues($statement);
             $statement->execute();
             $model = $this->model;
             $this->reset();
             if ($statement->rowCount() > 0) {
-                if ($model && !$fetch_mode) {
-                    if ($first) {
-                        $statement->setFetchMode(PDO::FETCH_INTO, $model);
-                        return $statement->fetch();
-                    }
-                    $result = [];
-                    foreach ($statement->fetchAll(PDO::FETCH_OBJ) as $data) {
-                        $result[] = clone $model->setAttributes($data);
-                    }
-                    return $result;
+                if ($model) {
+                    return $first
+                        ? $this->collectionDataFetch($statement, $model)
+                        : $this->collectionDataFetchAll($statement, $model);
                 }
-                if ($first) {
-                    return $statement->fetch($fetch_mode);
-                }
-                return $statement->fetchAll($fetch_mode);
+                return $first ? $statement->fetch($fetch_style) : $statement->fetchAll($fetch_style);
             }
-        } 
-        catch (\PDOException $e) 
-        {
+        } catch (PDOException $e) {
             throw new DatabaseException($e->getMessage(), $queryString);
         }
+    }
+
+
+    /**
+     * @param PDOStatement $statement
+     * @param Model $model
+     * @return mixed
+     */
+    protected function collectionDataFetch(PDOStatement $statement, Model $model)
+    {
+        $statement->setFetchMode(PDO::FETCH_INTO, $model);
+
+        $result = $statement->fetch();
+
+        if (!empty($model->eager)) {
+            foreach ($model->eager as $method) {
+                $result = $model->$method()->getResult($result, $method);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param PDOStatement $statement
+     * @param Model $model
+     * @return array
+     */
+    protected function collectionDataFetchAll(PDOStatement $statement, Model $model): array
+    {
+        $result = $statement->fetchAll(PDO::FETCH_CLASS, get_class($model));
+        if (!empty($model->eager)) {
+            foreach ($model->eager as $method) {
+                $result = $model->$method()->getResult($result, $method);
+            }
+        }
+
+        return $result;
     }
 
 
@@ -135,11 +168,11 @@ class Database extends Connection
         $query = 'SELECT ' . implode(',', $this->select) . ' FROM ' . $this->table . ' ';
 
         $query .= implode(' ', array_merge(
-            $this->join,
-            $this->where,
-            $this->orderBy,
-            $this->groupBy,
-            $this->limit)
+                $this->join,
+                $this->where,
+                $this->orderBy,
+                $this->groupBy,
+                $this->limit)
         );
 
         return $query;
@@ -176,10 +209,10 @@ class Database extends Connection
 
 
     /**
-     * @param \Closure $callback
+     * @param Closure $callback
      * @return Database
      */
-    public function transaction(\Closure $callback = null) : Database
+    public function transaction(Closure $callback = null): Database
     {
         $this->pdo->beginTransaction();
 
@@ -253,7 +286,7 @@ class Database extends Connection
      * @param int $offset
      * @return Database
      */
-    public function limit($limit, $offset = 0):Database
+    public function limit($limit, $offset = 0): Database
     {
         $this->limit[] = ' LIMIT ' . $offset . ',' . $limit;
 
@@ -329,7 +362,7 @@ class Database extends Connection
 
         try {
             return ($this->pdo->exec($queryString) === false);
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             throw new DatabaseException($e->getMessage(), $queryString);
         }
     }
@@ -351,7 +384,7 @@ class Database extends Connection
                 return $result->fetchAll();
             }
             return null;
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             throw new DatabaseException($e->getMessage(), $queryString);
         }
     }
@@ -371,7 +404,7 @@ class Database extends Connection
                 return $result->fetchAll();
             }
             return null;
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             throw new DatabaseException($e->getMessage(), $queryString);
         }
     }
@@ -382,7 +415,7 @@ class Database extends Connection
      */
     public function lastId()
     {
-        if ($this->pdo instanceof  PDO) {
+        if ($this->pdo instanceof PDO) {
             return $this->pdo->lastInsertId();
         }
         return null;
@@ -408,21 +441,36 @@ class Database extends Connection
         return $this;
     }
 
+    /**
+     * @param $method
+     * @param $args
+     * @return Database
+     */
     public function __call($method, $args)
     {
-        if(stripos($method, 'where') === 0) {
-            $column = substr($method,5);
-            if($column !== '') {
-                return $this->where($column,$args[0] ??  false);
-            }
+        if (stripos($method, 'where') === 0) {
+            $column = substr($method, 5);
+            return $this->where($column, $args[0] ?? false);
         }
+
+        if (stripos($method, 'orderBy') === 0) {
+            $order = substr($method, 7);
+            return $this->orderBy($args[0] ?? false, strtoupper($order));
+        }
+
         return $this->pdo->$method(...$args);
     }
-
 
 
     public function __clone()
     {
         $this->reset();
+    }
+
+    public function __destruct()
+    {
+        $this->connections = [];
+
+        $this->pdo = null;
     }
 }

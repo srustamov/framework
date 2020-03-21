@@ -41,19 +41,18 @@ abstract class Connection
             $config = $this->config[$this->group];
 
             try {
-                $dsn = "host={$config['hostname']};dbname={$config['dbname']};charset={$config['charset']}";
-                $this->connections[$this->group] = new PDO("mysql:{$dsn}", $config['username'], $config['password']);
+                $dsn = "mysql:host={$config['hostname']};dbname={$config['dbname']};charset={$config['charset']}";
+                $this->connections[$this->group] = new PDO($dsn, $config['username'], $config['password']);
                 $this->pdo = $this->connections[$this->group];
                 $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
                 $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $this->pdo->query("SET CHARACTER SET  " . $config['charset']);
-                $this->pdo->query("SET NAMES " . $config['charset']);
+                $this->pdo->exec('SET CHARACTER SET  ' . $config['charset']);
+                $this->pdo->exec('SET NAMES ' . $config['charset']);
             } catch (PDOException $e) {
                 if ($check) {
                     return false;
-                } else {
-                    throw new DatabaseException($e->getMessage());
                 }
+                throw new DatabaseException($e->getMessage());
             }
         } else {
             $this->pdo = $this->connections[$this->group];
@@ -81,7 +80,7 @@ abstract class Connection
      * @return $this
      * @throws DatabaseException
      */
-    public function connect($group = 'default')
+    public function connect($group = 'default'): self
     {
         $this->group = $group;
 
@@ -94,7 +93,7 @@ abstract class Connection
      * Database connection close;
      * @param string|null $group
      */
-    public function disconnect(string $group = null)
+    public function disconnect(string $group = null): void
     {
         $connect = $group ?: $this->group;
 
