@@ -6,7 +6,7 @@
  * @link    https://github.com/srustamov/TT
  */
 
-use TT\Libraries\Database\Model;
+use TT\Database\Orm\Model;
 
 
 class :name extends Model
@@ -14,9 +14,6 @@ class :name extends Model
 
    // default :names
    //protected $table;
-
-   // default [*]
-   //protected $select;
 
    /*
    * default Primary Key id

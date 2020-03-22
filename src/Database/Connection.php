@@ -1,13 +1,13 @@
 <?php
 
-namespace TT\Libraries\Database;
+namespace TT\Database;
 
 /**
  * @package    TT
  * @author  Samir Rustamov <rustemovv96@gmail.com>
  * @link https://github.com/srustamov/TT
- * @subpackage    Library
- * @category    Database/Connection
+ * @subpackage Library
+ * @category Database/Connection
  */
 
 use TT\Exceptions\DatabaseException;

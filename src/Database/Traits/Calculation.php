@@ -1,4 +1,4 @@
-<?php namespace TT\Libraries\Database\Traits;
+<?php namespace TT\Database\Traits;
 
 /**
  * @package    TT

@@ -1,16 +1,16 @@
 <?php
 
 
-namespace TT\Libraries\Database;
+namespace TT\Database\Orm;
 
 
 use RuntimeException;
 use TT\Libraries\Arr;
 use App\Exceptions\ModelNotFoundException;
-use TT\Libraries\Database\Relations\BelongsTo;
-use TT\Libraries\Database\Relations\HasMany;
+use TT\Database\Orm\Relations\BelongsTo;
+use TT\Database\Orm\Relations\HasMany;
 
-class ModelBuilder
+class Builder
 {
 
     protected $model;
@@ -19,7 +19,7 @@ class ModelBuilder
 
 
     /**
-     * ModelBuilder constructor.
+     * Builder constructor.
      * @param Model $model
      */
     public function __construct(Model $model)
@@ -35,7 +35,7 @@ class ModelBuilder
      * @param $key
      * @return BelongsTo
      */
-    public function belongsTo($child, $key):BelongsTo
+    public function belongsTo($child, $key): BelongsTo
     {
         return new BelongsTo($child, $key, $this->model);
     }
@@ -45,9 +45,9 @@ class ModelBuilder
      * @param $key
      * @return HasMany
      */
-    public function hasMany($child, $key):HasMany
+    public function hasMany($child, $key): HasMany
     {
-        return new HasMany($child,$key,$this->model);
+        return new HasMany($child, $key, $this->model);
     }
 
     /**
@@ -115,7 +115,7 @@ class ModelBuilder
             if (Arr::isAssoc($primaryKey)) {
                 $where = $primaryKey;
             } else {
-                return $this->query->whereIn($pk,$primaryKey)->get();
+                return $this->query->whereIn($pk, $primaryKey)->get();
             }
         } else {
             $where = [$pk => $primaryKey];
@@ -146,7 +146,7 @@ class ModelBuilder
      * @param $primaryKey
      * @return bool
      */
-    public function destroy($primaryKey):bool
+    public function destroy($primaryKey): bool
     {
         $pk = $this->model->getPrimaryKey();
 
@@ -156,12 +156,10 @@ class ModelBuilder
         /**@var $query Database */
 
         if (is_array($primaryKey)) {
-            $this->query->whereIn($pk, $primaryKey);
+            return $this->query->whereIn($pk, $primaryKey)->delete();
         } else {
-            $this->query->where($pk, $primaryKey);
+            return $this->query->where($pk, $primaryKey)->delete();
         }
-
-        return $query->delete();
     }
 
 
@@ -187,15 +185,13 @@ class ModelBuilder
      */
     public function __call($name, $arguments)
     {
-        if(stripos($name, 'findby') === 0) {
-            $column = substr($name,6);
-            if($column !== '') {
+        if (stripos($name, 'findby') === 0) {
+            $column = substr($name, 6);
+            if ($column !== '') {
                 return $this->find([$column => $arguments[0] ?? null]);
             }
         }
 
         return $this->query->$name(...$arguments);
     }
-
-
 }

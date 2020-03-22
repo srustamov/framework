@@ -1,15 +1,15 @@
 <?php
 
 
-namespace TT\Libraries\Database\Relations;
+namespace TT\Database\Orm\Relations;
 
 
 
-use TT\Libraries\Database\Model;
+use TT\Database\Orm\Model;
 
 class BelongsTo extends Relation
 {
-    /**@var $query Model*/
+    /**@var $model Model*/
     private $model;
 
     /**@var $query Model*/

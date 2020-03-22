@@ -300,7 +300,7 @@ class App implements ArrayAccess
             'cache' => 'TT\Libraries\Cache\Cache',
             'console' => 'TT\Engine\Cli\Console',
             'cookie' => 'TT\Libraries\Cookie',
-            'database' => 'TT\Libraries\Database\Database',
+            'database' => 'TT\Database\Builder',
             'email' => 'TT\Libraries\Mail\Email',
             'file' => 'TT\Libraries\File',
             'hash' => 'TT\Libraries\Hash',
@@ -458,7 +458,7 @@ class App implements ArrayAccess
      */
     public function offsetUnset($offset): void
     {
-        if(isset(self::$classes[$offset])) {
+        if (isset(self::$classes[$offset])) {
             unset(self::$classes[$offset]);
         }
     }

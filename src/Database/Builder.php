@@ -1,13 +1,13 @@
 <?php
 
-namespace TT\Libraries\Database;
+namespace TT\Database;
 
 /**
  * @package    TT
  * @author  Samir Rustamov <rustemovv96@gmail.com>
  * @link https://github.com/srustamov/TT
  * @subpackage    Library
- * @category    Database
+ * @category    Builder
  */
 
 
@@ -15,9 +15,10 @@ use Closure;
 use PDO;
 use PDOException;
 use PDOStatement;
+use TT\Database\Orm\Model;
 use TT\Exceptions\DatabaseException;
 
-class Database extends Connection
+class Builder extends Connection
 {
     use Traits\InsertDeleteUpdate;
     use Traits\Join;
@@ -26,7 +27,7 @@ class Database extends Connection
 
     private $table;
 
-    private $database;
+    private $Builder;
 
     private $select = [];
 
@@ -44,14 +45,13 @@ class Database extends Connection
 
     private $model;
 
-    private $with = [];
 
 
     /**
      * @param Model $model
-     * @return Database
+     * @return Builder
      */
-    public function setModel(Model $model): Database
+    public function setModel(Model $model): Builder
     {
         $this->model = $model;
 
@@ -167,12 +167,15 @@ class Database extends Connection
 
         $query = 'SELECT ' . implode(',', $this->select) . ' FROM ' . $this->table . ' ';
 
-        $query .= implode(' ', array_merge(
+        $query .= implode(
+            ' ',
+            array_merge(
                 $this->join,
                 $this->where,
                 $this->orderBy,
                 $this->groupBy,
-                $this->limit)
+                $this->limit
+            )
         );
 
         return $query;
@@ -210,9 +213,9 @@ class Database extends Connection
 
     /**
      * @param Closure $callback
-     * @return Database
+     * @return Builder
      */
-    public function transaction(Closure $callback = null): Database
+    public function transaction(Closure $callback = null): Builder
     {
         $this->pdo->beginTransaction();
 
@@ -228,7 +231,7 @@ class Database extends Connection
      * @param String $table
      * @return $this
      */
-    public function table(String $table): Database
+    public function table(String $table): Builder
     {
         $this->table = $this->config[$this->group]['prefix'] . $table;
 
@@ -236,12 +239,12 @@ class Database extends Connection
     }
 
     /**
-     * @param String $database
+     * @param String $Builder
      * @return $this
      */
-    public function database(String $database): Database
+    public function Builder(String $Builder): Builder
     {
-        $this->database = $database;
+        $this->Builder = $Builder;
         return $this;
     }
 
@@ -270,7 +273,7 @@ class Database extends Connection
      * @param $select
      * @return $this
      */
-    public function select($select): Database
+    public function select($select): Builder
     {
         if (is_array($select)) {
             $select = implode(',', $select);
@@ -284,9 +287,9 @@ class Database extends Connection
     /**
      * @param $limit
      * @param int $offset
-     * @return Database
+     * @return Builder
      */
-    public function limit($limit, $offset = 0): Database
+    public function limit($limit, $offset = 0): Builder
     {
         $this->limit[] = ' LIMIT ' . $offset . ',' . $limit;
 
@@ -298,7 +301,7 @@ class Database extends Connection
      * @param string $sort
      * @return $this
      */
-    public function orderBy($column, $sort = 'ASC'): Database
+    public function orderBy($column, $sort = 'ASC'): Builder
     {
         $this->orderBy[] = ' ORDER BY ' . $column . ' ' . strtoupper($sort);
 
@@ -306,9 +309,9 @@ class Database extends Connection
     }
 
     /**
-     * @return Database
+     * @return Builder
      */
-    public function orderByRand(): Database
+    public function orderByRand(): Builder
     {
         $this->orderBy[] = ' ORDER BY RAND() ';
 
@@ -319,7 +322,7 @@ class Database extends Connection
      * @param $column
      * @return $this
      */
-    public function groupBy($column): Database
+    public function groupBy($column): Builder
     {
         $this->groupBy[] = ' GROUP BY ' . $column;
         return $this;
@@ -373,9 +376,9 @@ class Database extends Connection
      */
     public function tables()
     {
-        $database = $this->database ?: $this->config[$this->group]['dbname'];
+        $Builder = $this->Builder ?: $this->config[$this->group]['dbname'];
 
-        $queryString = "SHOW TABLES FROM {$database}";
+        $queryString = "SHOW TABLES FROM {$Builder}";
 
         try {
             $result = $this->pdo->query($queryString);
@@ -425,7 +428,7 @@ class Database extends Connection
     /**
      * @return $this
      */
-    public function reset(): Database
+    public function reset(): Builder
     {
         $this->bindValues = [];
         $this->select = [];
@@ -435,7 +438,7 @@ class Database extends Connection
         $this->groupBy = [];
         $this->join = [];
         $this->table = null;
-        $this->database = null;
+        $this->Builder = null;
         $this->model = null;
 
         return $this;
@@ -444,7 +447,7 @@ class Database extends Connection
     /**
      * @param $method
      * @param $args
-     * @return Database
+     * @return Builder
      */
     public function __call($method, $args)
     {

@@ -1,14 +1,14 @@
-<?php namespace TT\Libraries\Database\Relations;
+<?php
 
-use TT\Libraries\Database\Model;
+namespace TT\Database\Orm\Relations;
+
+use TT\Database\Orm\Model;
 
 class HasMany extends Relation
 {
     private $abstract;
 
     private $model;
-
-    private $result;
 
     private $key;
 
@@ -31,7 +31,6 @@ class HasMany extends Relation
         $this->key = $key;
 
         $this->abstract = $abstract;
-
     }
 
     /**
@@ -85,11 +84,11 @@ class HasMany extends Relation
      * @param string $attribute_name
      * @return mixed
      */
-    public function getResult($result,string $attribute_name)
+    public function getResult($result, string $attribute_name)
     {
         $this->setKeyValues(
             array_values(array_unique(
-                array_column((array) $result,$this->foreignKey)
+                array_column((array) $result, $this->foreignKey)
             ))
         );
         $key = $this->getKey();
@@ -104,7 +103,7 @@ class HasMany extends Relation
                         (array) $column_value[] = $data;
                     }
                 }
-                $item->setAttribute($attribute_name,$column_value);
+                $item->setAttribute($attribute_name, $column_value);
                 $column_value = null;
             }
         } else {
@@ -113,7 +112,7 @@ class HasMany extends Relation
                     (array) $column_value[] = $data;
                 }
             }
-            $result->setAttribute($attribute_name,$column_value);
+            $result->setAttribute($attribute_name, $column_value);
         }
 
         return $result;
@@ -130,5 +129,4 @@ class HasMany extends Relation
 
         return $this;
     }
-
 }

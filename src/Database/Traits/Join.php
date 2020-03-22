@@ -1,11 +1,13 @@
-<?php namespace TT\Libraries\Database\Traits;
+<?php
+
+namespace TT\Database\Traits;
 
 /**
  * @package    TT
  * @author  Samir Rustamov <rustemovv96@gmail.com>
  * @link https://github.com/srustamov/TT
- * @subpackage    Library
- * @category    Database
+ * @subpackage Library
+ * @category Database
  */
 trait Join
 {

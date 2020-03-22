@@ -66,6 +66,7 @@ class Language implements \ArrayAccess
 
 
     public function get($key, $default = null)
+    
     {
         if (strpos($key, '.')) {
             $item_recursive = explode('.', $key);

@@ -1,4 +1,6 @@
-<?php namespace TT\Libraries\Database\Traits;
+<?php
+
+namespace TT\Database\Traits;
 
 /**
  * @package    TT
@@ -115,12 +117,12 @@ trait InsertDeleteUpdate
             }
         } else {
             $query = "DELETE FROM {$this->table} " .
-                   preg_replace(
-                       "/SELECT.*FROM {$this->table}/",
-                       '',
-                       $this->getQueryString(),
-                       1
-                   );
+                preg_replace(
+                    "/SELECT.*FROM {$this->table}/",
+                    '',
+                    $this->getQueryString(),
+                    1
+                );
         }
 
         $queryString = $this->normalizeQueryString($query);

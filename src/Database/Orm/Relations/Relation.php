@@ -1,7 +1,7 @@
 <?php
 
 
-namespace TT\Libraries\Database\Relations;
+namespace TT\Database\Orm\Relations;
 
 
 abstract class Relation
@@ -30,6 +30,5 @@ abstract class Relation
      * @param string $attribute_name
      * @return mixed
      */
-    abstract public function getResult($result,string $attribute_name);
-
+    abstract public function getResult($result, string $attribute_name);
 }

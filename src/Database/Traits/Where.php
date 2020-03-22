@@ -1,4 +1,6 @@
-<?php namespace TT\Libraries\Database\Traits;
+<?php
+
+namespace TT\Database\Traits;
 
 /**
  * @package    TT
@@ -16,9 +18,9 @@ trait Where
     protected $operators = [
         '=', '<', '>', '<=', '>=', '<>', '!=', '<=>',
         'like', 'like binary', 'not like', 'ilike',
-        '&', '|', '^', '<<', '>>','is not null',
+        '&', '|', '^', '<<', '>>', 'is not null',
         'rlike', 'not rlike', 'regexp', 'not regexp',
-        '~', '~*', '!~', '!~*', 'similar to','is null',
+        '~', '~*', '!~', '!~*', 'similar to', 'is null',
         'not similar to', 'not ilike', '~~*', '!~~*',
     ];
 
@@ -69,12 +71,11 @@ trait Where
 
         $where = empty($this->where) ? $logic[0] : $logic[1];
 
-        $this->where[] = ' ' . $where . ' ' . $column .' '. $operator . ' ? ';
+        $this->where[] = ' ' . $where . ' ' . $column . ' ' . $operator . ' ? ';
 
         $this->bindValues[] = $value;
 
         return $this;
-
     }
 
 
@@ -214,7 +215,7 @@ trait Where
      */
     public function orNotLike($column, $value): self
     {
-        return $this->like($column,$value,'OR NOT');
+        return $this->like($column, $value, 'OR NOT');
     }
 
     /**
@@ -225,6 +226,6 @@ trait Where
      */
     public function like($column, $value, $logic = ''): self
     {
-        return $this->where($column,$logic.' LIKE',$value);
+        return $this->where($column, $logic . ' LIKE', $value);
     }
 }

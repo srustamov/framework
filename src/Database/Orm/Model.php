@@ -1,6 +1,6 @@
 <?php
 
-namespace TT\Libraries\Database;
+namespace TT\Database\Orm;
 
 /**
  * @author  Samir Rustamov <rustemovv96@gmail.com>
@@ -13,8 +13,7 @@ use TT\Facades\DB;
 use ArrayAccess;
 use JsonSerializable;
 use Countable;
-use TT\Libraries\Database\Relations\Relation;
-
+use TT\Database\Orm\Relations\Relation;
 
 /**
  * @method static where($foreign_key, $primaryKey):Database
@@ -116,15 +115,14 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         if (isset($this->attributes[$name])) {
             return $this->attributes[$name];
         }
-        if (method_exists($this,$name)) {
+        if (method_exists($this, $name)) {
             $relation = $this->$name();
-            if($relation instanceof Relation) {
+            if ($relation instanceof Relation) {
                 return $this->$name()->_load();
             }
             return $relation;
         }
         return null;
-
     }
 
     /**
@@ -157,20 +155,20 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     }
 
     /**
-     * @return Database
+     * @return \TT\Database\Builder
      */
-    public function getQuery(): Database
+    public function getQuery()
     {
         return DB::setModel($this)->table($this->getTable());
     }
 
 
     /**
-     * @return ModelBuilder
+     * @return Builder
      */
-    public function getBuilder(): ModelBuilder
+    public function getBuilder(): Builder
     {
-        return new ModelBuilder($this);
+        return new Builder($this);
     }
 
     /**
@@ -347,7 +345,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      * The return value is cast to an integer.
      * @since 5.1.0
      */
-    public function count():int
+    public function count(): int
     {
         return count($this->getAttributes());
     }
