@@ -11,7 +11,7 @@
 
 use Exception;
 use RuntimeException;
-use TT\Libraries\Database\Model;
+use TT\Database\Orm\Model;
 use InvalidArgumentException;
 use TT\Facades\Session;
 use TT\Facades\Cookie;
