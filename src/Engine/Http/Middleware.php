@@ -6,6 +6,7 @@
  */
 
 
+use Exception;
 use RuntimeException;
 use TT\Engine\App;
 
@@ -17,7 +18,7 @@ class Middleware
      * @param string $guard
      * @param array $excepts
      * @return bool|mixed
-     * @throws \Exception
+     * @throws Exception
      */
 
     public static function init($class, string $guard = 'default', $excepts = [])
@@ -57,13 +58,13 @@ class Middleware
         $name = $extension;
 
         if (strpos($extension, '|') !== false) {
-            list($name, $excepts) = explode('|', $extension, 2);
+            [$name, $excepts] = explode('|', $extension, 2);
 
             $excepts = explode(',', $excepts);
         }
 
         if (strpos($name, ':')) {
-            list($name, $guard) = explode(':', $extension, 2);
+            [$name, $guard] = explode(':', $extension, 2);
         }
 
 

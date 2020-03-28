@@ -171,16 +171,6 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
         return new Builder($this);
     }
 
-    /**
-     * @param $name
-     * @param $arguments
-     * @return mixed
-     */
-    private function callCustomMethod($name, $arguments)
-    {
-        return $this->getBuilder()->{$name}(...$arguments);
-    }
-
 
     /**
      * @param $name
@@ -189,7 +179,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
      */
     public function __call($name, $arguments)
     {
-        return $this->callCustomMethod($name, $arguments);
+        return $this->getBuilder()->{$name}(...$arguments);
     }
 
 

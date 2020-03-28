@@ -82,13 +82,18 @@ function import(String $file, $once = true)
  */
 function importFiles($directory, $once = true)
 {
-    foreach (glob(rtrim($directory, DIRECTORY_SEPARATOR) . "/*") as $file) {
+    foreach (glob(rtrim($directory, DIRECTORY_SEPARATOR) . '/*') as $file) {
         import($file, $once);
     }
 }
 
 
-function bcrypt($value,$hash = null)
+/**
+ * @param $value
+ * @param null $hash
+ * @return mixed
+ */
+function bcrypt($value, $hash = null)
 {
     if($hash === null) {
         return App::get('hash')->make($value);
@@ -97,24 +102,39 @@ function bcrypt($value,$hash = null)
     return App::get('hash')->check($value,$hash);
 }
 
+/**
+ * @return mixed
+ */
 function openssl()
 {
     return App::get('openssl');
 }
 
 
+/**
+ * @param string $path
+ * @return mixed
+ */
 function storage_path($path = '')
 {
     return App::getInstance()->storagePath($path);
 }
 
 
+/**
+ * @param string $path
+ * @return mixed
+ */
 function app_path($path = '')
 {
     return App::getInstance()->appPath($path);
 }
 
 
+/**
+ * @param string $path
+ * @return mixed
+ */
 function public_path($path = '')
 {
     return App::getInstance()->publicPath($path);
@@ -156,7 +176,7 @@ function abort(Int $http_code, $message = null, $headers = [])
         $content = view('errors.' . $http_code);
     } else if (file_exists($file.'.php')) {
         ob_start();
-        require $file.'.php';
+        import($file.'.php');
         $content = ob_get_clean();
     } else if(file_exists($file.'.html')) {
         $content = file_get_contents($file.'.html');
@@ -308,7 +328,7 @@ if (!function_exists('report')) {
 if (!function_exists('env')) {
     /**
      * @param $name
-     * @return array|bool|false|mixed|string
+     * @return mixed
      */
     function env($name)
     {
@@ -319,7 +339,7 @@ if (!function_exists('env')) {
             return apache_getenv($name);
         }
 
-        return $_ENV[$name] ?? $_SERVER[$name] ?? false;
+        return $_ENV[$name] ?? $_SERVER[$name] ?? null;
     }
 }
 
@@ -455,6 +475,10 @@ if (!function_exists('validator')) {
 
 
 if (!function_exists('get')) {
+    /**
+     * @param bool $name
+     * @return mixed
+     */
     function get($name = false)
     {
         return App::get('input')->get($name);
@@ -463,6 +487,10 @@ if (!function_exists('get')) {
 
 
 if (!function_exists('post')) {
+    /**
+     * @param bool $name
+     * @return mixed
+     */
     function post($name = false)
     {
         return App::get('input')->post($name);
@@ -471,6 +499,9 @@ if (!function_exists('post')) {
 
 
 if (!function_exists('request')) {
+    /**
+     * @return mixed
+     */
     function request()
     {
         if (func_num_args() === 0) {
@@ -487,6 +518,10 @@ if (!function_exists('request')) {
 
 
 if (!function_exists('xssClean')) {
+    /**
+     * @param $data
+     * @return mixed
+     */
     function xssClean($data)
     {
         return App::get('input')->xssClean($data);
@@ -495,6 +530,11 @@ if (!function_exists('xssClean')) {
 
 
 if (!function_exists('fullTrim')) {
+    /**
+     * @param $str
+     * @param string $char
+     * @return String
+     */
     function fullTrim($str, $char = ' '): String
     {
         return str_replace($char, '', $str);
@@ -503,6 +543,10 @@ if (!function_exists('fullTrim')) {
 
 
 if (!function_exists('encode_php_tag')) {
+    /**
+     * @param $str
+     * @return String
+     */
     function encode_php_tag($str): String
     {
         return str_replace(array('<?', '?>'), array('&lt;?', '?&gt;'), $str);
@@ -511,6 +555,12 @@ if (!function_exists('encode_php_tag')) {
 
 
 if (!function_exists('preg_replace_array')) {
+    /**
+     * @param $pattern
+     * @param array $replacements
+     * @param $subject
+     * @return String
+     */
     function preg_replace_array($pattern, array $replacements, $subject): String
     {
         /**
@@ -526,6 +576,12 @@ if (!function_exists('preg_replace_array')) {
 
 
 if (!function_exists('str_replace_first')) {
+    /**
+     * @param $search
+     * @param $replace
+     * @param $subject
+     * @return String
+     */
     function str_replace_first($search, $replace, $subject): String
     {
         return App::get('str')->replace_first($search, $replace, $subject);
@@ -534,6 +590,12 @@ if (!function_exists('str_replace_first')) {
 
 
 if (!function_exists('str_replace_last')) {
+    /**
+     * @param $search
+     * @param $replace
+     * @param $subject
+     * @return String
+     */
     function str_replace_last($search, $replace, $subject): String
     {
         return App::get('str')->replace_last($search, $replace, $subject);
@@ -542,6 +604,11 @@ if (!function_exists('str_replace_last')) {
 
 
 if (!function_exists('str_slug')) {
+    /**
+     * @param $str
+     * @param string $separator
+     * @return String
+     */
     function str_slug($str, $separator = '-'): String
     {
         return App::get('str')->slug($str, $separator);
@@ -550,6 +617,12 @@ if (!function_exists('str_slug')) {
 
 
 if (!function_exists('str_limit')) {
+    /**
+     * @param $str
+     * @param int $limit
+     * @param string $end
+     * @return String
+     */
     function str_limit($str, $limit = 100, $end = '...'): String
     {
         return App::get('str')->limit($str, $limit, $end);
@@ -558,6 +631,11 @@ if (!function_exists('str_limit')) {
 
 
 if (!function_exists('upper')) {
+    /**
+     * @param String $str
+     * @param string $encoding
+     * @return String
+     */
     function upper(String $str, $encoding = 'UTF-8'): String
     {
         return mb_strtoupper($str, $encoding);
@@ -566,6 +644,11 @@ if (!function_exists('upper')) {
 
 
 if (!function_exists('lower')) {
+    /**
+     * @param String $str
+     * @param string $encoding
+     * @return String
+     */
     function lower(String $str, $encoding = 'UTF-8'): String
     {
         return mb_strtolower($str, $encoding);
@@ -608,6 +691,12 @@ if (!function_exists('len')) {
 
 
 if (!function_exists('str_replace_array')) {
+    /**
+     * @param $search
+     * @param array $replace
+     * @param $subject
+     * @return String
+     */
     function str_replace_array($search, array $replace, $subject): String
     {
         return App::get('str')->replace_array($search, $replace, $subject);
@@ -616,6 +705,11 @@ if (!function_exists('str_replace_array')) {
 
 
 if (!function_exists('url')) {
+    /**
+     * @param null $url
+     * @param array $parameters
+     * @return mixed
+     */
     function url($url = null, $parameters = [])
     {
         if ($url === null) {
@@ -628,6 +722,10 @@ if (!function_exists('url')) {
 
 
 if (!function_exists('current_url')) {
+    /**
+     * @param string $url
+     * @return String
+     */
     function current_url($url = ''): String
     {
         return App::get('url')->current($url);
@@ -636,6 +734,10 @@ if (!function_exists('current_url')) {
 
 
 if (!function_exists('clean_url')) {
+    /**
+     * @param $url
+     * @return String
+     */
     function clean_url($url): String
     {
         if ($url === '') {
@@ -707,6 +809,10 @@ if (!function_exists('is_mail')) {
 
 
 if (!function_exists('is_url')) {
+    /**
+     * @param String $url
+     * @return mixed
+     */
     function is_url(String $url)
     {
         return App::get('validator')->is_url($url);
@@ -715,6 +821,10 @@ if (!function_exists('is_url')) {
 
 
 if (!function_exists('is_ip')) {
+    /**
+     * @param $ip
+     * @return mixed
+     */
     function is_ip($ip)
     {
         return App::get('validator')->is_ip($ip);
@@ -723,6 +833,11 @@ if (!function_exists('is_ip')) {
 
 
 if (!function_exists('css')) {
+    /**
+     * @param $file
+     * @param bool $modifiedTime
+     * @return String
+     */
     function css($file, $modifiedTime = false): String
     {
         return App::get('html')->css($file, $modifiedTime);
@@ -731,6 +846,11 @@ if (!function_exists('css')) {
 
 
 if (!function_exists('js')) {
+    /**
+     * @param $file
+     * @param bool $modifiedTime
+     * @return String
+     */
     function js($file, $modifiedTime = false): String
     {
         return App::get('html')->js($file, $modifiedTime);
@@ -739,6 +859,11 @@ if (!function_exists('js')) {
 
 
 if (!function_exists('img')) {
+    /**
+     * @param $file
+     * @param array $attributes
+     * @return String
+     */
     function img($file, $attributes = []): String
     {
         return App::get('html')->img($file, $attributes);

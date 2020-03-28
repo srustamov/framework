@@ -22,12 +22,20 @@ class UploadedFile extends \SplFileInfo
     private $mimeType;
 
 
+    /**
+     * UploadedFile constructor.
+     * @param array $files
+     */
     public function __construct(array $files)
     {
         $this->files = $files;
     }
 
 
+    /**
+     * @param $name
+     * @return $this|bool
+     */
     public function get($name)
     {
         if (isset($this->files[$name])) {
@@ -49,9 +57,11 @@ class UploadedFile extends \SplFileInfo
         return false;
     }
 
-    
 
-    public function isValid()
+    /**
+     * @return bool
+     */
+    public function isValid(): bool
     {
         $isOk = $this->error === UPLOAD_ERR_OK;
 
@@ -59,7 +69,10 @@ class UploadedFile extends \SplFileInfo
     }
 
 
-    public function setName($name)
+    /**
+     * @param $name
+     */
+    public function setName($name): void
     {
         $originalName = str_replace('\\', '/', $name);
         $position     = strrpos($originalName, '/');
@@ -69,43 +82,63 @@ class UploadedFile extends \SplFileInfo
     }
 
 
+    /**
+     * @return mixed
+     */
     public function size()
     {
         return $this->size;
     }
 
+    /**
+     * @return mixed
+     */
     public function name()
     {
         return $this->name;
     }
 
 
-    public function extension()
+    /**
+     * @return string
+     */
+    public function extension(): string
     {
         return $this->getExtension();
     }
 
 
+    /**
+     * @return mixed
+     */
     public function mimeType()
     {
         return $this->mimeType;
     }
 
+    /**
+     * @return mixed
+     */
     public function uploadErrorMessage()
     {
         return $this->uploadError;
     }
 
 
-    public function move($target, String $name = null)
+    /**
+     * @param $target
+     * @param string|null $name
+     * @return bool
+     */
+    public function move($target, string $name = null): bool
     {
         if ($this->isValid()) {
             $target = rtrim($target, '/').'/';
 
-            $name   = !is_null($name) ? $name : $this->name();
+            $name = $name ?? $this->name();
 
-            if (!is_dir($target)) {
-                @mkdir($target, 0777, true);
+            if (!mkdir($target, 0777, true) && !is_dir($target)) {
+                throw new \RuntimeException(sprintf('Directory "%s" was not created', $target));
             }
 
             if (!@move_uploaded_file($this->getRealPath(), $target.$name)) {

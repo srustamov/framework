@@ -15,12 +15,20 @@ class Config implements ArrayAccess, Countable
     private $configurations;
 
 
+    /**
+     * Config constructor.
+     * @param array $configurations
+     */
     public function __construct(array $configurations = [])
     {
         $this->configurations = $configurations;
     }
 
-    public function has($key)
+    /**
+     * @param $key
+     * @return bool
+     */
+    public function has($key): bool
     {
         if (strpos($key, '.') !== false) {
             $items_recursive = explode('.', $key);
@@ -40,12 +48,20 @@ class Config implements ArrayAccess, Countable
     }
 
 
-    public function all()
+    /**
+     * @return array
+     */
+    public function all(): array
     {
         return $this->configurations;
     }
 
 
+    /**
+     * @param $extension
+     * @param null $default
+     * @return mixed|null
+     */
     public function get($extension, $default = null)
     {
         if (strpos($extension, '.') !== false) {
@@ -64,7 +80,10 @@ class Config implements ArrayAccess, Countable
     }
 
 
-
+    /**
+     * @param $key
+     * @param null $value
+     */
     public function set($key, $value = null)
     {
         $keys = is_array($key) ? $key : [$key => $value];
@@ -75,6 +94,9 @@ class Config implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param String $key
+     */
     public function forget(String $key)
     {
         if (strpos($key, '.') !== false) {
@@ -85,12 +107,19 @@ class Config implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param $key
+     */
     public function delete($key)
     {
         $this->forget($key);
     }
 
 
+    /**
+     * @param $key
+     * @param $value
+     */
     public function prepend($key, $value)
     {
         $array = $this->get($key);
@@ -101,6 +130,10 @@ class Config implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param $key
+     * @param $value
+     */
     public function push($key, $value)
     {
         $array = $this->get($key);
@@ -111,6 +144,12 @@ class Config implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param $configurations
+     * @param $key
+     * @param $value
+     * @return mixed
+     */
     private static function setRecursive(&$configurations, $key, $value)
     {
         if ($key === null) {
@@ -131,7 +170,12 @@ class Config implements ArrayAccess, Countable
     }
 
 
-    private static function forgetRecursive(&$configurations, $key)
+    /**
+     * @param $configurations
+     * @param $key
+     * @return bool
+     */
+    private static function forgetRecursive(&$configurations, $key): ?bool
     {
         $keys = explode('.', $key);
 

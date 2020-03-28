@@ -88,18 +88,25 @@ class Route
     /**
      * @param String $namespace
      */
-    public function setNamespace(String $namespace)
+    public function setNamespace(String $namespace): void
     {
         $this->namespace = trim($namespace, '\\');
     }
 
 
-    public function setGlobalPatterns(array $patterns)
+    /**
+     * @param array $patterns
+     */
+    public function setGlobalPatterns(array $patterns): void
     {
         $this->patterns = $patterns;
     }
 
 
+    /**
+     * @param String|null $domain
+     * @return $this|string
+     */
     public function domain(String $domain = null)
     {
         if ($domain !== null) {
@@ -112,9 +119,7 @@ class Route
             return $this;
         }
 
-        $domain =  $this->domain !== null
-            ? $this->domain
-            : $this->app->get('url')->base();
+        $domain = $this->domain ?? $this->app->get('url')->base();
 
         return rtrim($domain, '/');
     }
@@ -126,12 +131,12 @@ class Route
      * @param $path
      * @param $handler
      */
-    public function add($methods, $path, $handler)
+    public function add($methods, $path, $handler): void
     {
         $this->methods = is_array($methods) ? $methods : [$methods];
 
 
-        list($_path, $middleware, $pattern) = $this->parsePath($path);
+        [$_path, $middleware, $pattern] = $this->parsePath($path);
 
 
         foreach ($this->methods as $method) {
@@ -155,7 +160,7 @@ class Route
     /**
      * @param Closure $handler
      */
-    public function ajax(Closure $handler)
+    public function ajax(Closure $handler): void
     {
         $this->ajax = true;
 
@@ -191,7 +196,7 @@ class Route
             $handler = $resource['handler'];
 
             if (preg_match('/({.+?})/', $route)) {
-                list($args, $uri, $route) = $this->parseRoute($requestUri, $route, $resource['pattern'] ?? []);
+                [$args, $uri, $route] = $this->parseRoute($requestUri, $route, $resource['pattern'] ?? []);
             }
 
             if (!preg_match("#^$route$#", $requestUri)) {
@@ -222,16 +227,16 @@ class Route
 
 
     /**
-     * @param string $action
+     * @param string $handler
      * @param $middleware_array
      * @param $args
      * @return mixed
-     * @throws NotFoundException|Exception
+     * @throws Exception
      */
     protected function callAction(string $handler, $middleware_array, $args)
     {
 
-        list($controller, $method) = explode('@', $handler);
+        [$controller, $method] = explode('@', $handler);
 
         if (strpos($controller, '/') !== false) {
             $controller = str_replace('/', '\\', $controller);
@@ -299,11 +304,11 @@ class Route
      * @param array $middleware_array
      * @throws Exception
      */
-    protected function callMiddleware(array $middleware_array)
+    protected function callMiddleware(array $middleware_array): void
     {
         if (!empty($middleware_array)) {
             foreach ($middleware_array as $middleware) {
-                list($name, $excepts, $guard) = Middleware::getExceptsAndGuard($middleware);
+                [$name, $excepts, $guard] = Middleware::getExceptsAndGuard($middleware);
                 if (isset($this->middlewareAliases[$name])) {
                     Middleware::init($this->middlewareAliases[$name], $guard, $excepts);
                 }
@@ -318,7 +323,7 @@ class Route
      */
     private function getRequestMethod(): string
     {
-        $method = $this->app->get('request')->method('GET');
+        $method = $this->app->get('request')->getMethod('GET');
 
         return ($method === 'HEAD') ?  'GET' : $method;
     }
@@ -394,7 +399,7 @@ class Route
      * @param array $routes
      * @return $this
      */
-    public function setRoutes(array $routes)
+    public function setRoutes(array $routes): self
     {
         $this->routes = $routes;
 
@@ -412,13 +417,14 @@ class Route
     /**
      * @param array $files
      * @return $this
+     * @throws Exception
      */
-    public function importRouteFiles(array $files)
+    public function importRouteFiles(array $files): self
     {
+        // dd($files);
         foreach ($files as $file) {
-            require_once $file;
+            require_once($file);
         }
-
         return $this;
     }
 
@@ -462,7 +468,10 @@ class Route
     }
 
 
-    public function flush()
+    /**
+     * @return Route
+     */
+    public function flush(): Route
     {
         $route  = new Route($this->app);
 

@@ -9,12 +9,20 @@ class Parameters implements ArrayAccess, Countable
     private $parameters;
 
 
+    /**
+     * Parameters constructor.
+     * @param array $parameters
+     */
     public function __construct(array $parameters = [])
     {
         $this->make($parameters);
     }
 
-    public function make(array $parameters)
+    /**
+     * @param array $parameters
+     * @return $this
+     */
+    public function make(array $parameters):self
     {
         $this->parameters = $parameters;
 
@@ -22,11 +30,20 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param $key
+     * @param null $default
+     * @return mixed
+     */
     public function get($key, $default = null)
     {
         return $this->parameters[$key] ?? $default;
     }
 
+    /**
+     * @param $key
+     * @param null $value
+     */
     public function set($key, $value = null)
     {
         if (is_array($key)) {
@@ -39,23 +56,37 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param $key
+     * @param null $value
+     */
     public function add($key, $value = null)
     {
         $this->set($key, $value);
     }
 
+    /**
+     * @return mixed
+     */
     public function all()
     {
         return $this->parameters;
     }
 
 
-    public function has($key)
+    /**
+     * @param $key
+     * @return bool
+     */
+    public function has($key): bool
     {
         return isset($this->parameters[$key]);
     }
 
 
+    /**
+     * @param $key
+     */
     public function remove($key)
     {
         if ($this->has($key)) {
@@ -64,8 +95,10 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
-
-    public function only()
+    /**
+     * @return array
+     */
+    public function only(): array
     {
         if (func_num_args() === 0) {
             return [];
@@ -77,6 +110,9 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @return array|mixed
+     */
     public function except()
     {
         if (func_num_args() === 0) {
@@ -89,6 +125,11 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param $callback
+     * @param bool $use_key
+     * @return $this
+     */
     public function map($callback, bool $use_key = false)
     {
         if ($use_key) {
@@ -107,7 +148,11 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
-    public function filter($callback)
+    /**
+     * @param $callback
+     * @return $this
+     */
+    public function filter($callback): self
     {
         $this->parameters = array_filter(
             $this->parameters,
@@ -119,17 +164,29 @@ class Parameters implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @param $key
+     * @return mixed
+     */
     public function __get($key)
     {
         return $this->get($key);
     }
 
 
+    /**
+     * @param $name
+     * @return bool
+     */
     public function __isset($name)
     {
         return $this->has($name);
     }
 
+    /**
+     * @param $key
+     * @param $value
+     */
     public function __set($key, $value)
     {
         return $this->set($key, $value);

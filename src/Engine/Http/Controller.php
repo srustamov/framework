@@ -10,32 +10,32 @@
 // Base Controller Class
 //-------------------------------------------------------------
 
+use Exception;
 use TT\Engine\App;
+use TT\Libraries\View\View;
 
 abstract class Controller
 {
 
-
-
     protected $middleware_aliases = [];
-
 
     /**
      * @param String $file
      * @param array $data
-     * @return \TT\Libraries\View\View
-     * @throws \Exception
+     * @return View
+     * @throws Exception
      */
-    protected function view(String $file, array $data = [])
+    protected function view(String $file, array $data = []): View
     {
         return App::get('view')->render($file, $data);
     }
 
 
     /**
-     * @throws \Exception
+     * @param $middleware
+     * @throws Exception
      */
-    protected function middleware($middleware)
+    protected function middleware($middleware): void
     {
         $middleware = is_array($middleware) ? $middleware : [$middleware];
 
@@ -45,7 +45,7 @@ abstract class Controller
 
         
         foreach ($middleware as $extension) {
-            list($name, $excepts, $guard) = Middleware::getExceptsAndGuard($extension);
+            [$name, $excepts, $guard] = Middleware::getExceptsAndGuard($extension);
             if (isset($this->middleware_aliases[$name])) {
                 Middleware::init($this->middleware_aliases[$name], $guard, $excepts);
             }
@@ -53,11 +53,16 @@ abstract class Controller
     }
 
 
-
+    /**
+     * @param String $action
+     * @param array $args
+     * @param string $namespace
+     * @return mixed
+     */
     protected function callAction(String $action, array $args = [], $namespace = 'App\\Controllers')
     {
         if (strpos($action, '@') !== false) {
-            list($controller, $method) = explode('@', $action);
+            [$controller, $method] = explode('@', $action);
 
             $controller = '\\'.$namespace.'\\'.str_replace('/', '\\', $controller);
 

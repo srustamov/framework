@@ -106,9 +106,7 @@ class Builder extends Connection
             $this->reset();
             if ($statement->rowCount() > 0) {
                 if ($model) {
-                    return $first
-                        ? $this->collectionDataFetch($statement, $model)
-                        : $this->collectionDataFetchAll($statement, $model);
+                    return $this->createModelCollectionData($statement, $model, $first);
                 }
                 return $first ? $statement->fetch($fetch_style) : $statement->fetchAll($fetch_style);
             }
@@ -117,35 +115,22 @@ class Builder extends Connection
         }
     }
 
-
     /**
      * @param PDOStatement $statement
      * @param Model $model
+     * @param bool $first
      * @return mixed
      */
-    protected function collectionDataFetch(PDOStatement $statement, Model $model)
+    protected function createModelCollectionData(PDOStatement $statement, Model $model, $first = false)
     {
-        $statement->setFetchMode(PDO::FETCH_INTO, $model);
-
-        $result = $statement->fetch();
-
-        if (!empty($model->eager)) {
-            foreach ($model->eager as $method) {
-                $result = $model->$method()->getResult($result, $method);
-            }
+        if ($first) {
+            $statement->setFetchMode(PDO::FETCH_INTO, $model);
+            $result = $statement->fetch();
+        } else {
+            $statement->setFetchMode(PDO::FETCH_CLASS, get_class($model));
+            $result = $statement->fetchAll();
         }
 
-        return $result;
-    }
-
-    /**
-     * @param PDOStatement $statement
-     * @param Model $model
-     * @return array
-     */
-    protected function collectionDataFetchAll(PDOStatement $statement, Model $model): array
-    {
-        $result = $statement->fetchAll(PDO::FETCH_CLASS, get_class($model));
         if (!empty($model->eager)) {
             foreach ($model->eager as $method) {
                 $result = $model->$method()->getResult($result, $method);

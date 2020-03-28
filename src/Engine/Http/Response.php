@@ -270,6 +270,21 @@ class Response
         return $this->content;
     }
 
+
+    protected function toString($content)
+    {
+        if (is_array($content)) {
+            return json_encode($content);
+        }
+
+        if (null !== $content && !is_string($content) && !is_numeric($content) && !is_callable(array( $content , '__toString' ))) {
+            throw new UnexpectedValueException(sprintf('The Response content must be a string or object implementing __toString(), "%s" given.', gettype($content)));
+        }
+
+        return $content;
+
+    }
+
     /**
      * @param $content
      * @return $this
@@ -280,19 +295,7 @@ class Response
             return $this;
         }
 
-        if (is_array($content)) {
-            $content = json_encode($content);
-        }
-
-        if (null !== $content && !is_string($content) && !is_numeric($content) && !is_callable(array( $content , '__toString' ))) {
-            throw new UnexpectedValueException(sprintf('The Response content must be a string or object implementing __toString(), "%s" given.', gettype($content)));
-        }
-
-        if (is_object($content) && is_callable(array( $content , '__toString' ))) {
-            $content = $content->__toString();
-        }
-
-        $this->content = $content;
+        $this->content = $this->toString($content);
 
         return $this;
     }
@@ -303,7 +306,7 @@ class Response
      */
     public function appendContent($content): self
     {
-        return $this->setContent($this->getContent().$content);
+        return $this->setContent($this->getContent().$this->toString($content));
     }
 
     /**
@@ -312,7 +315,7 @@ class Response
      */
     public function prependContent($content): Response
     {
-        return $this->setContent($content.$this->getContent());
+        return $this->setContent($this->toString($content).$this->getContent());
     }
 
     /**
@@ -398,9 +401,9 @@ class Response
 
 
     /**
-     * @author Symfony
+     * @author Symfony framework
     */
-    public static function closeOutputBuffers()
+    public static function closeOutputBuffers(): void
     {
         $status = ob_get_status(true);
 
@@ -408,7 +411,10 @@ class Response
 
         $flags = defined('PHP_OUTPUT_HANDLER_REMOVABLE') ? PHP_OUTPUT_HANDLER_REMOVABLE | PHP_OUTPUT_HANDLER_FLUSHABLE  : -1;
 
-        while ($level-- > 0 && ($s = $status[$level]) && (!isset($s['del']) ? !isset($s['flags']) || $flags === ($s['flags'] & $flags) : $s['del'])) {
+        while ($level-- > 0 &&
+            ($s = $status[$level]) &&
+            ($s['del'] ?? !isset($s['flags']) || $flags === ($s['flags'] & $flags)))
+        {
             ob_end_flush();
         }
     }

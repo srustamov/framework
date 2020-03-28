@@ -1,4 +1,6 @@
-<?php namespace TT\Engine\Http;
+<?php
+
+namespace TT\Engine\Http;
 
 /**
  * @author  Samir Rustamov <rustemovv96@gmail.com>
@@ -6,6 +8,7 @@
  */
 
 
+use TT\Database\Orm\Model;
 use function file_get_contents;
 use function in_array;
 use Countable;
@@ -54,6 +57,10 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     private $application;
 
 
+    /**
+     * Request constructor.
+     * @param App $application
+     */
     public function __construct(App $application)
     {
         $this->application = $application;
@@ -62,7 +69,11 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
-    public function prepare()
+    /**
+     * Prepare request data
+     * @return $this
+     */
+    public function prepare(): self
     {
         $this->server = new Parameters($_SERVER);
 
@@ -76,9 +87,10 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
 
         $this->files = new UploadedFile($_FILES);
 
-        $this->method = $this->method('GET');
+        $this->method = $this->getMethod('GET');
 
-        if (0 === strpos($this->headers->get('Content-Type'), 'application/x-www-form-urlencoded')
+        if (
+            0 === strpos($this->headers->get('Content-Type'), 'application/x-www-form-urlencoded')
             && in_array(strtoupper($this->method), ['PUT', 'DELETE', 'PATCH'])
         ) {
             $this->request = $this->input;
@@ -90,25 +102,32 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
+    /**
+     * @return mixed
+     */
     protected function prepareInputData()
     {
-        if($this->isJson()) {
+        if ($this->isJson()) {
             $content = file_get_contents('php://input');
-            
-            $data = json_decode($content);
-            
-            if(json_last_error() == JSON_ERROR_NONE) {
+
+            $data = json_decode($content,true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
                 return $data;
             }
             unset($data);
         }
         parse_str(file_get_contents('php://input'), $data);
-        
+
 
         return $data;
     }
 
 
+    /**
+     * @param $key
+     * @param null $value
+     */
     public function setRouteParams($key, $value = null)
     {
         if (is_array($key)) {
@@ -120,12 +139,21 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
         }
     }
 
+    /**
+     * @param $key
+     * @return bool|mixed
+     */
     public function params($key)
     {
         return $this->routeParams[$key] ?? false;
     }
 
 
+    /**
+     * @param $key
+     * @param null $default
+     * @return mixed
+     */
     public function get($key, $default = null)
     {
         if ($this !== $result = $this->query->get($key, $this)) {
@@ -140,7 +168,12 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
-    public function input($name = null, $default = false)
+    /**
+     * @param null $name
+     * @param bool $default
+     * @return Parameters|null
+     */
+    public function input($name = null, $default = false): ?Parameters
     {
         if ($name) {
             return $this->input->get($name, $default);
@@ -149,6 +182,10 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
+    /**
+     * @param null $key
+     * @return mixed|App
+     */
     public function session($key = null)
     {
         if ($key === null) {
@@ -159,7 +196,11 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
-    public function cookie($key = null)
+    /**
+     * @param null $key
+     * @return Parameters|null
+     */
+    public function cookie($key = null): ?Parameters
     {
         if ($key === null) {
             return $this->cookies;
@@ -169,12 +210,20 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
-    public function user()
+    /**
+     * @return null|Model
+     */
+    public function user(): ?Model
     {
         return $this->app('authentication')->user();
     }
 
 
+    /**
+     * @param string|null $key
+     * @param null $default
+     * @return Parameters|null
+     */
     public function server(string $key = null, $default = null)
     {
         if ($key === null) {
@@ -184,22 +233,35 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
-    public function header(string $name = null, $default = null)
+    /**
+     * @param string|null $name
+     * @param null $default
+     * @return Parameters|null
+     */
+    public function header(string $name = null, $default = null): ?Parameters
     {
-        if ($key === null) {
+        if ($name === null) {
             return $this->headers;
         }
-        return $this->headers->get($key, $default);
+        return $this->headers->get($name, $default);
     }
 
 
-    public function file(string $name)
+    /**
+     * @param string $name
+     * @return UploadedFile
+     */
+    public function file(string $name):?UploadedFile
     {
         return $this->files->get($name);
     }
 
 
-    public function method(string $default = 'GET'): String
+    /**
+     * @param string $default
+     * @return string
+     */
+    public function getMethod(string $default = 'GET'): string
     {
         if ($this->method === null) {
             $method = $this->server('request_method');
@@ -219,50 +281,74 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
-    public function isMethod(string $method)
+    /**
+     * @param string $method
+     * @return bool
+     */
+    public function isMethod(string $method): bool
     {
-        return $this->method() === $method;
+        return $this->getMethod() === $method;
     }
 
-    public function isJson()
+    /**
+     * @return bool
+     */
+    public function isJson(): bool
     {
         return $this->headers->has('Accept') &&
             strpos($this->headers->get('Accept'), 'application/json') === 0;
     }
 
 
+    /**
+     * @return bool
+     */
     public function ajax(): Bool
     {
         return ($this->server('HTTP_X_REQUESTED_WITH') === 'XMLHttpRequest');
     }
 
 
+    /**
+     * @param null $default
+     * @return mixed|null
+     */
     public function bearerToken($default = null)
     {
         if ($this->headers->has('Authorization')) {
             $authorization = $this->headers->get('Authorization');
             if (preg_match('/Bearer\s+(\S+)/', $authorization, $matches)) {
-                $token =  $matches[1];
+                $token = $matches[1];
             }
         }
 
         return $token ?? $default;
     }
 
+    /**
+     * @return mixed
+     */
     public function ip()
     {
         return $this->app('http')->ip();
     }
 
+    /**
+     * @return mixed
+     */
     public function url()
     {
         return $this->app('url')->request();
     }
 
 
+    /**
+     * @param null $method
+     * @return bool|mixed|string
+     */
     public function controller($method = null)
     {
-        if ($method === null) {
+        if (!$method) {
             return defined('CONTROLLER') ? CONTROLLER : false;
         }
 
@@ -270,6 +356,9 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     }
 
 
+    /**
+     * @param array $roles
+     */
     public function validate(array $roles)
     {
         $validation = $this->app('validator')->make($this->all(), $roles);
@@ -281,6 +370,10 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
         }
     }
 
+    /**
+     * @param null $class
+     * @return mixed|App
+     */
     public function app($class = null)
     {
         if ($class) {
@@ -289,22 +382,39 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
         return $this->application;
     }
 
+    /**
+     * @param $name
+     * @return mixed
+     */
     public function __get($name)
     {
         return $this->request->get($name);
     }
 
+    /**
+     * @param $name
+     * @return bool
+     */
     public function __isset($name)
     {
         return true;
     }
 
+    /**
+     * @param $name
+     * @param $value
+     */
     public function __set($name, $value)
     {
         return $this->request->set($name, $value);
     }
 
 
+    /**
+     * @param $method
+     * @param $args
+     * @return mixed
+     */
     public function __call($method, $args)
     {
         return $this->request->{$method}(...$args);
@@ -409,9 +519,8 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
      */
     public function unSerialize($serialized)
     {
-        unserialize($serialized);
+        unserialize($serialized,['allowed_classes' => []]);
     }
-
 
 
     /**
