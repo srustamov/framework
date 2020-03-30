@@ -19,7 +19,7 @@ use TT\Engine\Http\Response;
 
 class App implements ArrayAccess
 {
-    public const VERSION = '1.2';
+    public const VERSION = '1.4';
 
     public static $classes = [];
 
@@ -316,7 +316,7 @@ class App implements ArrayAccess
             'redis' => 'TT\Libraries\Redis',
             'request' => 'TT\Engine\Http\Request',
             'response' => 'TT\Engine\Http\Response',
-            'route' => 'TT\Engine\Http\Routing\Route',
+            'route' => 'TT\Engine\Http\Routing\Router',
             'session' => 'TT\Libraries\Session\Session',
             'str' => 'TT\Libraries\Str',
             'string' => 'TT\Libraries\Str',

@@ -91,11 +91,16 @@ class Builder
 
     /**
      * @param array $data
-     * @return bool
+     * @return mixed
      */
-    public function create(array $data): Bool
+    public function create(array $data)
     {
-        return $this->query->insert($data);
+        if($id = $this->query->insert($data,[],true)) {
+            $data[$this->model->getPrimaryKey()] = $id;
+            return $this->model->setAttributes($data);
+        }
+
+        return false;
     }
 
 

@@ -20,9 +20,9 @@ trait InsertDeleteUpdate
      * @param $insert
      * @param array $data
      * @param bool $getId
-     * @return bool
+     * @return mixed
      */
-    public function insert($insert, array $data = [], Bool $getId = false): ?bool
+    public function insert($insert, array $data = [], Bool $getId = false)
     {
         if (is_string($insert)) {
             $query = $insert;
@@ -45,7 +45,11 @@ trait InsertDeleteUpdate
 
             $this->reset();
 
-            return $getId ? $this->pdo->lastInsertId() : ($statement->rowCount() > 0);
+            if($statement->rowCount() > 0) {
+                return $getId ? $this->pdo->lastInsertId() : true;
+            }
+
+            return false;
         } catch (\PDOException $e) {
             throw new DatabaseException($e->getMessage(), $queryString);
         }
@@ -55,9 +59,9 @@ trait InsertDeleteUpdate
     /**
      * @param $insert
      * @param array $data
-     * @return bool|null
+     * @return mixed
      */
-    public function insertGetId($insert, array $data = []): ?bool
+    public function insertGetId($insert, array $data = [])
     {
         return $this->insert($insert, $data, true);
     }

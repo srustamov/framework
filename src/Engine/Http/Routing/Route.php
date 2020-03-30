@@ -2,330 +2,157 @@
 
 namespace TT\Engine\Http\Routing;
 
-/**
- * @author  Samir Rustamov <rustemovv96@gmail.com>
- * @link    https://github.com/srustamov/TT
- */
+use ArrayAccess;
+use InvalidArgumentException;
 
 
-use Closure;
-use Exception;
-use TT\Engine\App;
-use TT\Engine\Reflections;
-use TT\Engine\Http\Middleware;
-use TT\Exceptions\RouteException;
-use App\Exceptions\NotFoundException;
-
-class Route
+class Route implements ArrayAccess
 {
-    use Traits\RouteMethods;
-    use Traits\RouteGroup;
-    use Traits\Parse;
-
-    public $routes = [
-        'GET'     => [],
-        'POST'    => [],
-        'PUT'     => [],
-        'DELETE'  => [],
-        'OPTIONS' => [],
-        'PATCH'   => [],
-        'NAMES'   => [],
+    private $attributes = [
+        'prefix' => null,
+        'namespace' => null,
+        'middleware' => [],
+        'patterns' => [],
+        'domain' => null,
+        'name' => null,
+        'callback' => null
     ];
 
+    private $router;
 
-    private $middlewareAliases = [];
-
-    private $patterns = [];
-
-    private $domain;
-
-    private $notFound = false;
-
-    private $namespace = 'App\Controllers';
-
-    private $prefix;
-
-    private $group_name;
-
-    private $name;
-
-    private $middleware = [];
-
-    private $pattern = [];
-
-    private $methods = [];
-
-    private $group_middleware = [];
-
-    private $ajax = false;
-
-    /**@var App*/
-    private $app;
-
-
-    public function __construct(App $app)
+    public function __construct(Router $router)
     {
-        $this->app = $app;
+        $this->router = $router;
     }
 
 
-    public function setMiddlewareAliases($aliases = [])
+    /**
+     * @param $name
+     * @param $value
+     * @return $this
+     */
+    public function setAttribute($name, $value): self
     {
-        $aliases = is_array($aliases) ? $aliases : [$aliases];
+        $this->attributes[$name] = $value;
 
-        $this->middlewareAliases = $aliases;
+        return $this;
+    }
+
+    /**
+     * @param $attributes
+     * @return $this
+     */
+    public function setAttributes($attributes): self
+    {
+        $this->attributes = $attributes;
+
+        return $this;
+    }
+
+    /**
+     * @param $name
+     * @return mixed|null
+     */
+    public function getAttribute($name)
+    {
+        return $this->attributes[$name] ?? null;
+    }
+
+    /**
+     * @return array
+     */
+    public function getAttributes(): array
+    {
+        return $this->attributes;
+    }
+
+
+    /**
+     * @param $prefix
+     * @return $this
+     */
+    public function prefix($prefix): self
+    {
+        $this->setAttribute('prefix', $prefix);
+
+        return $this;
+    }
+
+    /**
+     * @param $prefix
+     * @return $this
+     */
+    public function prependPrefix($prefix): self
+    {
+        $this->prefix($prefix . $this->getAttribute('prefix'));
 
         return $this;
     }
 
 
-    public function getMiddlewareAliases(): array
+    /**
+     * @param $prefix
+     * @return $this
+     */
+    public function appendPrefix($prefix): self
     {
-        return $this->middlewareAliases;
+        $this->prefix($this->getAttribute('prefix') . $prefix);
+
+        return $this;
     }
 
 
     /**
-     * @param String $namespace
+     * @return mixed|null
      */
-    public function setNamespace(String $namespace): void
+    public function getPrefix()
     {
-        $this->namespace = trim($namespace, '\\');
+        return $this->getAttribute('prefix');
     }
 
 
     /**
-     * @param array $patterns
+     * @param $namespace
+     * @return $this
      */
-    public function setGlobalPatterns(array $patterns): void
+    public function namespace($namespace): self
     {
-        $this->patterns = $patterns;
+        $this->setAttribute('namespace', $namespace);
+
+        return $this;
+    }
+
+    /**
+     * @param $namespace
+     * @return $this
+     */
+    public function prependNamespace($namespace): self
+    {
+        $this->namespace(
+            rtrim($namespace, '\\') . '\\' . (ltrim($this->getAttribute('namesapce') ?? '', '\\'))
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param $namespace
+     * @return $this
+     */
+    public function appendNamespace($namespace): self
+    {
+        $this->namespace((trim($this->getAttribute('namespace') ?? '', '\\')) . '\\' . ltrim($namespace, '\\'));
+
+        return $this;
     }
 
 
     /**
-     * @param String|null $domain
-     * @return $this|string
+     * @return mixed|null
      */
-    public function domain(String $domain = null)
+    public function getNamespace()
     {
-        if ($domain !== null) {
-            if (preg_match('/^https?:\/\//', $domain)) {
-                $domain = str_replace(['https://', 'http://'], '', $domain);
-            }
-
-            $this->domain = $this->app->get('url')->scheme() . '://' . $domain;
-
-            return $this;
-        }
-
-        $domain = $this->domain ?? $this->app->get('url')->base();
-
-        return rtrim($domain, '/');
-    }
-
-
-
-    /**
-     * @param $methods
-     * @param $path
-     * @param $handler
-     */
-    public function add($methods, $path, $handler): void
-    {
-        $this->methods = is_array($methods) ? $methods : [$methods];
-
-
-        [$_path, $middleware, $pattern] = $this->parsePath($path);
-
-
-        foreach ($this->methods as $method) {
-            $this->routes[strtoupper($method)][] =  [
-                'path' => $_path,
-                'handler' => $handler,
-                'ajax' => $this->ajax,
-                'middleware' => $middleware,
-                'pattern' => $pattern
-            ];
-        }
-
-        $this->name = null;
-
-        $this->pattern = [];
-
-        $this->middleware = [];
-    }
-
-
-    /**
-     * @param Closure $handler
-     */
-    public function ajax(Closure $handler): void
-    {
-        $this->ajax = true;
-
-        $handler();
-
-        $this->ajax = false;
-    }
-
-
-    /**
-     * @return bool|int|mixed|void
-     * @throws RouteException
-     * @throws NotFoundException
-     * @throws Exception
-     */
-    public function run()
-    {
-        $requestUri = trim($this->app->get('url')->current(), '/');
-
-        $method     = $this->getRequestMethod();
-
-        $ajax       = $this->app->get('http')->isAjax();
-
-        foreach ($this->routes[$method] as $resource) {
-            if (!$ajax && $resource['ajax']) {
-                continue;
-            }
-
-            $args    = [];
-
-            $route   = rtrim($resource['path'], '/');
-
-            $handler = $resource['handler'];
-
-            if (preg_match('/({.+?})/', $route)) {
-                [$args, $uri, $route] = $this->parseRoute($requestUri, $route, $resource['pattern'] ?? []);
-            }
-
-            if (!preg_match("#^$route$#", $requestUri)) {
-                unset($this->routes[$method]);
-                continue;
-            }
-
-            if (isset($uri)) {
-                $this->parseRouteParams($uri, $args);
-            }
-
-            if (is_string($handler) && strpos($handler, '@')) {
-                return $this->callAction($handler, $resource['middleware'], $args);
-            }
-
-            if (is_callable($handler)) {
-                return $this->callHandler($handler, $resource['middleware'], $args);
-            }
-
-            throw new RouteException('Route Handler type undefined');
-        }
-        if (class_exists('NotFoundException')) {
-            throw new NotFoundException;
-        }
-
-        abort(404);
-    }
-
-
-    /**
-     * @param string $handler
-     * @param $middleware_array
-     * @param $args
-     * @return mixed
-     * @throws Exception
-     */
-    protected function callAction(string $handler, $middleware_array, $args)
-    {
-
-        [$controller, $method] = explode('@', $handler);
-
-        if (strpos($controller, '/') !== false) {
-            $controller = str_replace('/', '\\', $controller);
-        }
-
-        $class = "\\" . $this->namespace . "\\$controller";
-
-        if (method_exists($class, $method)) {
-            define('ACTION', strtolower($method));
-
-            define('CONTROLLER', $controller);
-
-            $this->callMiddleware($middleware_array);
-
-            $args = Reflections::methodParameters(
-                $class, $method, $args
-            );
-
-            $constructorArgs = [];
-            if (method_exists($class, '__construct')) {
-                $constructorArgs = Reflections::methodParameters(
-                    $class, '__construct'
-                );
-            }
-
-            $response = call_user_func_array([new $class(...$constructorArgs), $method], $args);
-
-            if ($this->app->isInstance($response, 'response')) {
-                return $response;
-            }
-            return $this->app->get('response')->appendContent($response);
-        }
-
-        if (class_exists('NotFoundException')) {
-            throw new NotFoundException;
-        }
-
-        abort(404);
-    }
-
-
-    /**
-     * @param callable $handler
-     * @param $middleware_array
-     * @param $args
-     * @return mixed
-     * @throws Exception
-     */
-    protected function callHandler(callable $handler, $middleware_array, $args)
-    {
-        $this->callMiddleware($middleware_array);
-
-        $args = Reflections::functionParameters($handler, $args);
-
-        $response = call_user_func_array($handler, $args);
-
-        if ($this->app->isInstance($response, 'response')) {
-            return $response;
-        }
-        return $this->app->get('response')->appendContent($response);
-    }
-
-
-    /**
-     * @param array $middleware_array
-     * @throws Exception
-     */
-    protected function callMiddleware(array $middleware_array): void
-    {
-        if (!empty($middleware_array)) {
-            foreach ($middleware_array as $middleware) {
-                [$name, $excepts, $guard] = Middleware::getExceptsAndGuard($middleware);
-                if (isset($this->middlewareAliases[$name])) {
-                    Middleware::init($this->middlewareAliases[$name], $guard, $excepts);
-                }
-            }
-        }
-    }
-
-
-    /**
-     * @return string
-     * @throws Exception
-     */
-    private function getRequestMethod(): string
-    {
-        $method = $this->app->get('request')->getMethod('GET');
-
-        return ($method === 'HEAD') ?  'GET' : $method;
+        return $this->getAttribute('namespace');
     }
 
 
@@ -335,148 +162,264 @@ class Route
      */
     public function middleware($middleware): self
     {
-        if (!empty($this->methods)) {
-            foreach ($this->methods as $method) {
-                $index = count($this->routes[$method]) - 1;
-
-                $this->routes[$method][$index]['middleware'][] = $middleware;
-            }
+        if (is_array($middleware)) {
+            $this->setAttribute(
+                'middleware',
+                array_merge($this->getAttribute('middleware'), $middleware)
+            );
         } else {
-            $this->middleware[] = $middleware;
+            $this->attributes['middleware'][] = $middleware;
         }
+
 
         return $this;
     }
 
 
     /**
-     * @param array|string $name
-     * @param null|string $value
-     * @return Route
+     * @return mixed|null
      */
-    public function pattern($name, $value = null): self
+    public function getMiddleware()
     {
-        $pattern = is_array($name) ? $name : [$name => $value];
+        return $this->getAttribute('middleware');
+    }
 
-        if (!empty($this->methods)) {
-            foreach ($this->methods as $method) {
-                $index = count($this->routes[$method]) - 1;
 
-                $old = $this->routes[$method][$index]['pattern'];
+    /**
+     * @param $domain
+     * @return $this
+     */
+    public function domain($domain): self
+    {
+        $this->setAttribute('domain', $domain);
 
-                $this->routes[$method][$index]['pattern'] = array_merge($old, $pattern);
-            }
+        return $this;
+    }
+
+
+    /**
+     * @return mixed|null
+     */
+    public function getDomain()
+    {
+        return $this->getAttribute('domain');
+    }
+
+
+    /**
+     * @param $pattern
+     * @return $this
+     */
+    public function pattern($pattern): self
+    {
+        if (is_array($pattern)) {
+            $this->setAttribute(
+                'patterns',
+                array_merge($this->getAttribute('patterns'), $pattern)
+            );
         } else {
-            $this->pattern = $pattern;
+            $this->attributes['patterns'][] = $pattern;
         }
 
         return $this;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getPatterns()
+    {
+        return $this->getAttribute('patterns');
     }
 
 
     /**
      * @param string $name
-     * @return Route
-     */
-    public function name(String $name): self
-    {
-        if (!empty($this->methods)) {
-            foreach ($this->methods as $method) {
-                $index = count($this->routes[$method]) - 1;
-
-                $path = $this->routes[$method][$index]['path'];
-
-                $this->routes['NAMES'][$this->group_name . $name] = $path;
-            }
-        } else {
-            $this->name = $name;
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param array $routes
      * @return $this
      */
-    public function setRoutes(array $routes): self
+    public function name($name): self
     {
-        $this->routes = $routes;
-
-        return $this;
-    }
-
-    /**
-     * @return array
-     */
-    public function getRoutes(): array
-    {
-        return (array) $this->routes;
-    }
-
-    /**
-     * @param array $files
-     * @return $this
-     * @throws Exception
-     */
-    public function importRouteFiles(array $files): self
-    {
-        // dd($files);
-        foreach ($files as $file) {
-            require_once($file);
+        if (!$name || empty(trim($name))) {
+            return $this;
         }
+        if ($name) {
+            $name = $this->getAttribute('name') . $name;
+        }
+
+        $this->setAttribute('name', $name);
+
+        $this->router->routes['NAMES'][$name] = $this->getPrefix();
+
         return $this;
     }
-
 
     /**
      * @param $name
-     * @param array $parameters
-     * @return mixed|string|string[]|null
-     * @throws RouteException
+     * @return $this
      */
-    public function getName($name, array $parameters = [])
+    public function prependName($name): self
     {
-        if (isset($this->routes['NAMES'][$name])) {
-            $route =  $this->routes['NAMES'][$name];
+        $this->name($name . $this->getAttribute('name'));
 
-            if (strpos($route, '}') !== false) {
-                if (!empty($parameters)) {
-                    foreach ($parameters as $key => $value) {
-                        $route = str_replace(['{' . $key . '}', '{' . $key . '?}'], $value, $route);
-                    }
-                }
+        return $this;
+    }
 
-                $callback = static function ($match) {
-                    if (strpos($match[0], '?') !== false) {
-                        return '';
-                    }
+    /**
+     * @param $name
+     * @return $this
+     */
+    public function appendName($name): self
+    {
+        $this->name($this->getAttribute('name') . $name);
 
-                    return $match[0];
-                };
-
-                $route = preg_replace_callback('/({.+?})/', $callback, $route);
-
-                if (strpos($route, '}') !== false) {
-                    throw new RouteException('Route url parameters required');
-                }
-            }
-
-            return $route;
-        }
-        throw new RouteException("Route name [{$name}] not found");
+        return $this;
     }
 
 
     /**
-     * @return Route
+     * @return mixed|null
      */
-    public function flush(): Route
+    public function getName()
     {
-        $route  = new Route($this->app);
+        return $this->getAttribute('name');
+    }
 
-        $this->app->singleton('route', $route);
 
-        return $route;
+    /**
+     * @param $callback
+     * @return $this
+     */
+    public function setCallback($callback): self
+    {
+        if (is_array($callback)) {
+            $this->parseCallback($callback);
+        } else {
+            $this->setAttribute('callback', $callback);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return mixed|null
+     */
+    public function getCallback()
+    {
+        return $this->getAttribute('callback');
+    }
+
+
+    /**
+     * @param $callback
+     */
+    protected function parseCallback($callback): void
+    {
+        if (
+            isset($callback['uses']) &&
+            is_string($callback['uses']) &&
+            !empty(trim($callback))
+        ) {
+            $this->setAttribute('callback', $callback['uses']);
+        } else {
+            throw new InvalidArgumentException('Route bad callback');
+        }
+
+        if (isset($callback['as'])) {
+            $this->name($callback['as']);
+        }
+
+        if (isset($callback['middleware'])) {
+            $this->middleware($callback['middleware']);
+        }
+    }
+
+    /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     */
+    public function __call($name, $arguments)
+    {
+        if (strtolower($name) === 'group') {
+            if (isset($arguments[0]) && is_callable($arguments[0])) {
+                $attributes = array_filter($this->attributes, function ($value) {
+                    return $value && !empty($value);
+                });
+
+                if ($this->getAttribute('name') && isset($this->router->routes['NAMES'][$this->getAttribute('name')])) {
+                    unset($this->router->routes['NAMES'][$this->getAttribute('name')]);
+                }
+                return $this->router->group($attributes, $arguments[0]);
+            }
+            throw new InvalidArgumentException('Route group parameter is not callable');
+        }
+        return $this->router->setBuilder($this)->$name(...$arguments);
+
+
+    }
+
+
+    /**
+     * Offset to retrieve
+     * @link http://php.net/manual/en/arrayaccess.offsetget.php
+     * @param mixed $offset <p>
+     * The offset to retrieve.
+     * </p>
+     * @return mixed Can return all value types.
+     * @since 5.0.0
+     */
+    public function offsetGet($offset)
+    {
+        return $this->getAttribute($offset);
+    }
+
+    /**
+     * Offset to set
+     * @link http://php.net/manual/en/arrayaccess.offsetset.php
+     * @param mixed $offset <p>
+     * The offset to assign the value to.
+     * </p>
+     * @param mixed $value <p>
+     * The value to set.
+     * </p>
+     * @return void
+     * @since 5.0.0
+     */
+    public function offsetSet($offset, $value)
+    {
+        $this->attributes[$offset] = $value;
+    }
+
+    /**
+     * Offset to unset
+     * @link http://php.net/manual/en/arrayaccess.offsetunset.php
+     * @param mixed $offset <p>
+     * The offset to unset.
+     * </p>
+     * @return void
+     * @since 5.0.0
+     */
+    public function offsetUnset($offset)
+    {
+        if (isset($this->attributes[$offset])) {
+            unset($this->attributes[$offset]);
+        }
+    }
+
+    /**
+     * Whether a offset exists
+     * @link http://php.net/manual/en/arrayaccess.offsetexists.php
+     * @param mixed $offset <p>
+     * An offset to check for.
+     * </p>
+     * @return boolean true on success or false on failure.
+     * </p>
+     * <p>
+     * The return value will be casted to boolean if non-boolean was returned.
+     * @since 5.0.0
+     */
+    public function offsetExists($offset)
+    {
+        return isset($this->attributes[$offset]);
     }
 }

@@ -143,9 +143,12 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
      * @param $key
      * @return bool|mixed
      */
-    public function params($key)
+    public function routeParams($key = null,$default = null)
     {
-        return $this->routeParams[$key] ?? false;
+        if(!$key) {
+            return $this->routeParams;
+        }
+        return $this->routeParams[$key] ?? $default;
     }
 
 
@@ -171,9 +174,9 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
     /**
      * @param null $name
      * @param bool $default
-     * @return Parameters|null
+     * @return mixed
      */
-    public function input($name = null, $default = false): ?Parameters
+    public function input($name = null, $default = false)
     {
         if ($name) {
             return $this->input->get($name, $default);
@@ -198,9 +201,9 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
 
     /**
      * @param null $key
-     * @return Parameters|null
+     * @return mixed
      */
-    public function cookie($key = null): ?Parameters
+    public function cookie($key = null)
     {
         if ($key === null) {
             return $this->cookies;
@@ -238,7 +241,7 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
      * @param null $default
      * @return Parameters|null
      */
-    public function header(string $name = null, $default = null): ?Parameters
+    public function header(string $name = null, $default = null)
     {
         if ($name === null) {
             return $this->headers;

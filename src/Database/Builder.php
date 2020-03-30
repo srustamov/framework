@@ -27,7 +27,7 @@ class Builder extends Connection
 
     private $table;
 
-    private $Builder;
+    private $database;
 
     private $select = [];
 
@@ -224,12 +224,12 @@ class Builder extends Connection
     }
 
     /**
-     * @param String $Builder
+     * @param String $database
      * @return $this
      */
-    public function Builder(String $Builder): Builder
+    public function database(String $database): Builder
     {
-        $this->Builder = $Builder;
+        $this->database = $database;
         return $this;
     }
 
@@ -361,9 +361,9 @@ class Builder extends Connection
      */
     public function tables()
     {
-        $Builder = $this->Builder ?: $this->config[$this->group]['dbname'];
+        $database = $this->database ?: $this->config[$this->group]['dbname'];
 
-        $queryString = "SHOW TABLES FROM {$Builder}";
+        $queryString = "SHOW TABLES FROM {$database}";
 
         try {
             $result = $this->pdo->query($queryString);
@@ -423,7 +423,7 @@ class Builder extends Connection
         $this->groupBy = [];
         $this->join = [];
         $this->table = null;
-        $this->Builder = null;
+        $this->database = null;
         $this->model = null;
 
         return $this;

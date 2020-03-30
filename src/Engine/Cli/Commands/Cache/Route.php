@@ -4,7 +4,6 @@ namespace TT\Engine\Cli\Commands\Cache;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use TT\Engine\App;
@@ -45,9 +44,9 @@ class Route extends Command
 
         if ($input->getOption('create')) {
             $routes = App::get('route')->getRoutes();
-            $this->content .= "<?php return [\n\n";
-            $this->create($routes);
-            $this->content .= '];';
+            $this->content .= "<?php return ";
+            $this->content .= var_export($routes,true);
+            $this->content .= ';';
             if (file_put_contents($this->file, $this->content)) {
                 $output->writeln(
                     '<fg=green>Routes cached successfully</>'
@@ -64,36 +63,6 @@ class Route extends Command
             $output->writeln(
                 '<fg=green>Routes cache clear successfully</>'
             );
-        }
-    }
-
-
-    private function create($routes)
-    {
-        foreach ($routes as $key => $value) {
-            if (is_array($value)) {
-                if (is_numeric($key)) {
-                    $this->content .= "\t [\n\n";
-                } else {
-                    $this->content .= "\t'" . $key . "' => [\n\n";
-                }
-
-                $this->create($value);
-
-                $this->content .= "\t],\n\n";
-            } else {
-                if (is_bool($value)) {
-                    $value = $value ? "true" : "false";
-                } elseif (!\is_int($value)) {
-                    $value = "'$value'";
-                }
-
-                if (is_numeric($key)) {
-                    $this->content .= "\t$value, \n\n";
-                } else {
-                    $this->content .= "\t'" . $key . "' => $value, \n\n";
-                }
-            }
         }
     }
 }
