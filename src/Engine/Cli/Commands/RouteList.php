@@ -33,9 +33,10 @@ class RouteList extends Command
 
         $table->setStyle('box');
 
-        $table->setHeaders(['Method', 'Url', 'Handler','Ajax','Middleware','Pattern']);
+        $table->setHeaders(['Method', 'Url', 'Callback','Middleware','Pattern','Name','Namespace']);
 
         $rows = [];
+        
         foreach ($routes as $method => $parameters) {
             if ($method === 'NAMES') {
                 continue;
@@ -43,11 +44,12 @@ class RouteList extends Command
             foreach ($parameters as $param) {
                 $rows[] = [
                    $method,
-                   $param['path'],
-                   $param['handler'],
-                   $param['ajax'] ? 'true' : 'false',
+                   $param['prefix'],
+                   is_callable($param['callback']) ? 'Closure' : $param['callback'],
                    implode(',', $param['middleware']),
-                   $this->showPattern($param['pattern']),
+                   $this->showPattern($param['patterns']),
+                   $param['name'],
+                   $param['namespace'],
                 ];
                 $rows[] = new TableSeparator();
             }

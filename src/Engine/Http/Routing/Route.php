@@ -16,7 +16,6 @@ class Route implements ArrayAccess
         'domain' => null,
         'name' => null,
         'callback' => null,
-        'controller' => null,
     ];
 
     private $router;
@@ -381,12 +380,6 @@ class Route implements ArrayAccess
         return $this->router->setRoute($this)->$name(...$arguments);
 
 
-    }
-
-
-    public function run()
-    {
-        
     }
 
 
