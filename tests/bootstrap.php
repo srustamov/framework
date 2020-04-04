@@ -1,6 +1,13 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+if(file_exists(__DIR__.'/../vendor/autoload')) {
+    require __DIR__.'/../vendor/autoload';
+} else{
+    if(file_exists(__DIR__ . '/../../../autoload.php')) {
+        require __DIR__ . '/../../../autoload.php';
+    }
+}
+
 
 $app = new TT\Engine\App(dirname(__DIR__));
 
