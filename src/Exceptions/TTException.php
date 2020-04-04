@@ -2,23 +2,25 @@
 
 use Exception;
 use RuntimeException;
+use TT\Facades\Config;
 
 /**
  * @author  Samir Rustamov <rustemovv96@gmail.com>
  * @link    https://github.com/srustamov/TT
  */
-class TTException
+class TTException extends Exception
 {
 
     /**
      * @param $e
      * @throws Exception
      */
-    private function show($e)
+    private function show($e): void
     {
         /**@var $e Exception */
 
         $this->writeErrorLog($e);
+
         if (CONSOLE) {
             $error = "
 *--------------ERROR-----------------
@@ -32,10 +34,13 @@ class TTException
 ";
 
             exit("\e[0;31m".$error."\e[0m\n");
-
         }
 
-        abort(500);
+        if (Config::get('app.debug',false)) {
+            require __DIR__.'/resource/exception.php';
+        } else {
+            abort(500);
+        }
     }
 
 
@@ -43,7 +48,7 @@ class TTException
      * @param $e
      * @throws Exception
      */
-    public function handler($e)
+    public function handler($e): void
     {
         $this->show($e);
     }
@@ -65,10 +70,8 @@ class TTException
 
         $path = path('storage/logs/errors/');
 
-        if (!is_dir($path)) {
-            if (!mkdir($path, 0755, true)) {
-                throw new RuntimeException($path . ' not found');
-            }
+        if (!is_dir($path) && !mkdir($path, 0755, true) && !is_dir($path)) {
+            throw new RuntimeException($path . ' not found');
         }
 
         $log_file = rtrim($path, '/') . '/' . date('Y-m-d') . '.log';
@@ -92,7 +95,7 @@ class TTException
      * @param int $line
      * @throws Exception
      */
-    public function handleError($level, $message, $file = '', $line = 0)
+    public function handleError($level, $message, $file = '', $line = 0): void
     {
         if (error_reporting() & $level) {
             $this->show($this->createFakeExceptionObject(array(
@@ -115,7 +118,7 @@ class TTException
         {
             private $data;
 
-            public function setExceptionData($data)
+            public function setExceptionData($data): void
             {
                 $this->data = $data;
             }
@@ -150,23 +153,25 @@ class TTException
     /**
      * @throws Exception
      */
-    public function handleShutdown()
+    public function handleShutdown(): void
     {
-        if (!is_null($error = error_get_last())) {
-            if (in_array($error['type'], [E_COMPILE_ERROR, E_CORE_ERROR, E_ERROR, E_PARSE])) {
-                $this->show($this->createFakeExceptionObject(array(
-                    'file' => $error['file'] ?? '',
-                    'message' => 'Fatal Error: ' . $error['message'] ?? '',
-                    'line' => $error['line'] ?? '',
-                    'code' => 0,
-                )));
-            }
+        if ((($error = error_get_last()) !== null) &&
+            in_array($error['type'], [E_COMPILE_ERROR, E_CORE_ERROR, E_ERROR, E_PARSE], true))
+        {
+            $this->show($this->createFakeExceptionObject(array(
+                'file' => $error['file'] ?? '',
+                'message' => 'Fatal Error: ' . $error['message'] ?? '',
+                'line' => $error['line'] ?? '',
+                'code' => 0,
+            )));
         }
     }
 
 
-    public function register()
+    public function register(): void
     {
+        ini_set('display_errors', 'Off');
+
         error_reporting(-1);
 
         set_error_handler([$this, 'handleError']);
@@ -175,6 +180,5 @@ class TTException
 
         register_shutdown_function([$this, 'handleShutdown']);
 
-        ini_set('display_errors', 'Off');
     }
 }

@@ -12,37 +12,69 @@ namespace TT\Engine;
 use ArrayAccess;
 use Closure;
 use Exception;
+use ReflectionException;
 use RuntimeException;
-use TT\Engine\Http\Middleware;
 use TT\Engine\Http\Request;
 use TT\Engine\Http\Response;
+use TT\Engine\Http\Pipeline\Pipeline;
 
 class App implements ArrayAccess
 {
-    public const VERSION = '1.4';
+    public const VERSION = '1.5';
 
     public static $classes = [];
 
-    protected $boot = false;
+    protected static $instance;
+
+    protected $routeMiddleware = [];
 
     protected $middleware = [];
 
-    protected $routeMiddleware = [];
+    private $boot = false;
 
     public $paths = [
         'base' => '',
         'public' => 'public',
         'storage' => 'storage',
         'lang' => 'lang',
-        'configs' => 'app/Config',
+        'configs' => 'configs',
         'envFile' => '.config',
         'envCacheFile' => 'storage/system/config',
         'configsCacheFile' => 'storage/system/configs.php',
         'routesCacheFile' => 'storage/system/routes.php',
     ];
 
-
-    protected static $instance;
+    public const MAP = [
+        'app' => 'TT\Engine\App',
+        'array' => 'TT\Arr',
+        'authentication' => 'TT\Auth\Authentication',
+        'cache' => 'TT\Cache\Cache',
+        'console' => 'TT\Engine\Cli\Console',
+        'cookie' => 'TT\Cookie',
+        'database' => 'TT\Database\Builder',
+        'email' => 'TT\Mail\Email',
+        'file' => 'TT\File',
+        'hash' => 'TT\Hash',
+        'html' => 'TT\Html',
+        'http' => 'TT\Http',
+        'input' => 'TT\Input',
+        'translator' => 'TT\Translation\Translator',
+        'middleware' => 'TT\Engine\Http\Middleware',
+        'openssl' => 'TT\Encryption\OpenSsl',
+        'jwt' => 'TT\Auth\Jwt',
+        'redirect' => 'TT\Redirect',
+        'redis' => 'TT\Redis',
+        'request' => 'TT\Engine\Http\Request',
+        'response' => 'TT\Engine\Http\Response',
+        'route' => 'TT\Engine\Http\Routing\Router',
+        'session' => 'TT\Session\Session',
+        'str' => 'TT\Str',
+        'string' => 'TT\Str',
+        'storage' => 'TT\Storage',
+        'url' => 'TT\Url',
+        'validator' => 'TT\Validator',
+        'view' => 'TT\View\View',
+    ];
 
 
     /**
@@ -53,6 +85,8 @@ class App implements ArrayAccess
      */
     public function __construct(string $basePath = null)
     {
+        define('DS', DIRECTORY_SEPARATOR);
+
         $this->prepare($basePath);
     }
 
@@ -77,7 +111,7 @@ class App implements ArrayAccess
         if ($basePath === null) {
             $this->paths['base'] = dirname(__DIR__, 4);
         } else {
-            $this->paths['base'] = rtrim($basePath, DIRECTORY_SEPARATOR);
+            $this->paths['base'] = rtrim($basePath, DS);
         }
 
         chdir($this->paths['base']);
@@ -104,7 +138,7 @@ class App implements ArrayAccess
 
             $this->setAliases();
 
-            $this->middleware($this->middleware);
+            $this->callMiddleware($this->middleware);
 
             $this->setLocale();
 
@@ -117,7 +151,7 @@ class App implements ArrayAccess
     }
 
 
-    protected function afterBootstrap()
+    protected function afterBootstrap(): void
     {
         //
     }
@@ -130,26 +164,29 @@ class App implements ArrayAccess
 
     protected function callImportantClasses(): void
     {
-        (new LoadEnvVariables($this))->handle();
-        (new PrepareConfigs($this))->handle();
+        (new LoadEnvironmentVariables($this))->handle();
+        (new PrepareConfigurations($this))->handle();
         (new RegisterExceptionHandler($this))->handle();
     }
 
 
     /**
-     * @param array|string $name
-     * @throws Exception
+     * @param $middleware
+     * @throws ReflectionException
      */
-    protected function middleware($name): void
+    public function callMiddleware($middleware): void
     {
-        $names = is_array($name) ? $name : [$name];
-        foreach ($names as $middleware) {
-            Middleware::init($middleware);
-        }
+        (new Pipeline($this))
+            ->send(self::get('request'))
+            ->pipe($middleware)
+            ->then(function ($request) {
+                $this['request'] = $request;
+            });
     }
 
     /**
      *  Application aliases setting
+     * @throws ReflectionException
      */
     protected function setAliases(): void
     {
@@ -166,12 +203,15 @@ class App implements ArrayAccess
      * Set application locale and timezone
      *
      * @return void
+     * @throws ReflectionException
      */
     protected function setLocale(): void
     {
-        setlocale(LC_ALL, self::get('config')->get('datetime.setLocale'));
+        $config = self::get('config');
 
-        date_default_timezone_set(self::get('config')->get('datetime.time_zone', 'UTC'));
+        setlocale(LC_ALL, $config->get('datetime.setLocale'));
+
+        date_default_timezone_set($config->get('datetime.time_zone', 'UTC'));
     }
 
 
@@ -183,19 +223,19 @@ class App implements ArrayAccess
      */
     public function routing(): Response
     {
-        /**@var $route Http\Routing\Route */
-        $route = self::get('route');
+        /**@var $router Http\Routing\Router */
+        $router = self::get('route');
 
-        $route->setMiddlewareAliases($this->routeMiddleware);
+        $router->setMiddlewareAliases($this->routeMiddleware);
 
         if (file_exists($file = $this->routesCacheFile())) {
-            $route->setRoutes(require $file);
+            $router->setRoutes(require $file);
         } else {
-            $route->importRouteFiles(
-                glob($this->path('routes') . '/*')
+            $router->importRouteFiles(
+                glob($this->path('routes') . '/*.php')
             );
         }
-        return CONSOLE ? self::get('response') : $route->run();
+        return CONSOLE ? self::get('response') : $router->run();
     }
 
     /**
@@ -217,9 +257,9 @@ class App implements ArrayAccess
 
             $this->paths['public'] = implode('/', $parts);
         } else {
-            $this->paths['public'] = rtrim($this->paths['base'], DIRECTORY_SEPARATOR)
-                . DIRECTORY_SEPARATOR
-                . ltrim($this->paths['public'], DIRECTORY_SEPARATOR);
+            $this->paths['public'] = rtrim($this->paths['base'], DS)
+                . DS
+                . ltrim($this->paths['public'], DS);
         }
     }
 
@@ -237,7 +277,7 @@ class App implements ArrayAccess
      */
     public function publicPath($path = ''): string
     {
-        return $this->paths['public'] . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
+        return $this->paths['public'] . DS . ltrim($path, DS);
     }
 
     /**
@@ -246,7 +286,7 @@ class App implements ArrayAccess
      */
     public function path($path = ''): string
     {
-        return $this->paths['base'] . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
+        return $this->paths['base'] . DS . ltrim($path, DS);
     }
 
     /**
@@ -255,86 +295,78 @@ class App implements ArrayAccess
      */
     public function storagePath($path = ''): string
     {
-        return $this->path($this->paths['storage'] . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR));
+        return $this->path($this->paths['storage'] . DS . ltrim($path, DS));
     }
 
+    /**
+     * @param string $path
+     * @return string
+     */
     public function configsPath($path = ''): string
     {
-        return $this->path($this->paths['configs'] . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR));
+        return $this->path($this->paths['configs'] . DS . ltrim($path, DS));
     }
 
+    /**
+     * @param string $path
+     * @return string
+     */
     public function appPath($path = ''): string
     {
         return $this->paths['base']
-            . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR
-            . ltrim($path, DIRECTORY_SEPARATOR);
+            . DS . 'app' . DS
+            . ltrim($path, DS);
     }
 
+    /**
+     * @param string $path
+     * @return string
+     */
     public function langPath($path = ''): string
     {
-        return $this->path($this->paths['lang'] . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR));
+        return $this->path($this->paths['lang'] . DS . ltrim($path, DS));
     }
 
+    /**
+     * @return string
+     */
     public function configsCacheFile(): string
     {
         return $this->path($this->paths['configsCacheFile']);
     }
 
+    /**
+     * @return string
+     */
     public function routesCacheFile(): string
     {
         return $this->path($this->paths['routesCacheFile']);
     }
 
+    /**
+     * @return string
+     */
     public function envCacheFile(): string
     {
         return $this->path($this->paths['envCacheFile']);
     }
 
-    public function classes(String $name = null, Bool $isValue = false)
+    /**
+     * @param String|null $name
+     * @param bool $isValue
+     * @return array|bool|false|int|mixed|string
+     */
+    public static function map(String $name = null, Bool $isValue = false)
     {
-
-        $classes = array(
-            'app' => "TT\Engine\App",
-            'array' => 'TT\Libraries\Arr',
-            'authentication' => 'TT\Libraries\Auth\Authentication',
-            'cache' => 'TT\Libraries\Cache\Cache',
-            'console' => 'TT\Engine\Cli\Console',
-            'cookie' => 'TT\Libraries\Cookie',
-            'database' => 'TT\Database\Builder',
-            'email' => 'TT\Libraries\Mail\Email',
-            'file' => 'TT\Libraries\File',
-            'hash' => 'TT\Libraries\Hash',
-            'html' => 'TT\Libraries\Html',
-            'http' => 'TT\Libraries\Http',
-            'input' => 'TT\Libraries\Input',
-            'lang' => 'TT\Libraries\Language',
-            'language' => 'TT\Libraries\Language',
-            'middleware' => 'TT\Engine\Http\Middleware',
-            'openssl' => 'TT\Libraries\Encryption\OpenSsl',
-            'jwt' => 'TT\Libraries\Auth\Jwt',
-            'redirect' => 'TT\Libraries\Redirect',
-            'redis' => 'TT\Libraries\Redis',
-            'request' => 'TT\Engine\Http\Request',
-            'response' => 'TT\Engine\Http\Response',
-            'route' => 'TT\Engine\Http\Routing\Router',
-            'session' => 'TT\Libraries\Session\Session',
-            'str' => 'TT\Libraries\Str',
-            'string' => 'TT\Libraries\Str',
-            'storage' => 'TT\Libraries\Storage',
-            'url' => 'TT\Libraries\Url',
-            'validator' => 'TT\Libraries\Validator',
-            'view' => 'TT\Libraries\View\View',
-        );
-
         if ($name === null) {
-            return $classes;
+            return self::MAP;
         }
 
         if (!$isValue) {
-            return $classes[strtolower($name)] ?? false;
+            return self::MAP[strtolower($name)] ?? false;
         }
 
-        return array_search($name, $classes, true);
+        return array_search($name, self::MAP, true);
     }
 
     /**
@@ -342,27 +374,32 @@ class App implements ArrayAccess
      * @param mixed ...$args
      * @return mixed
      * @throws RuntimeException
+     * @throws ReflectionException
      */
     public static function get(string $class, ...$args)
     {
-        if (isset(static::$classes[$class])) {
-            return static::$classes[$class];
+        if (isset(self::$classes[$class])) {
+            return self::$classes[$class];
         }
-        if ($instance = self::getInstance()->classes($class)) {
+        if ($instance = self::map($class)) {
             if (method_exists($instance, '__construct')) {
                 $args = Reflections::methodParameters($instance, '__construct', $args);
             }
-            static::$classes[$class] = new $instance(...$args);
-            return static::$classes[$class];
+            return self::$classes[$class] = new $instance(...$args);
         }
         if (strpos($class, '\\')) {
-            if ($instance = self::getInstance()->classes($class, true)) {
-                return static::get($instance, ...$args);
+            if ($instance = self::map($class, true)) {
+                return self::get($instance, ...$args);
             }
 
-            static::$classes[$class] = new $class(Reflections::methodParameters($class, '__construct', $args));
+            static::$classes[$class] = new $class(
+                Reflections::methodParameters(
+                    $class, '__construct',
+                    $args
+                )
+            );
 
-            return static::$classes[$class];
+            return self::$classes[$class];
         }
         throw new RuntimeException('Class not found [' . $class . ']');
     }
@@ -371,14 +408,14 @@ class App implements ArrayAccess
      * @param $className
      * @param $object
      */
-    public function singleton($className, $object): void
+    public function singleton(string $className, $object): void
     {
         if ($object instanceof Closure) {
-            static::$classes[$className] = $object($this);
+            self::$classes[$className] = $object($this);
         } elseif (is_string($object)) {
-            static::$classes[$className] = new $object();
+            self::$classes[$className] = new $object();
         } elseif (is_object($object)) {
-            static::$classes[$className] = $object;
+            self::$classes[$className] = $object;
         }
     }
 
@@ -391,7 +428,7 @@ class App implements ArrayAccess
      */
     public static function isInstance($object, $className): bool
     {
-        $instance = static::get($className);
+        $instance = self::get($className);
 
         return ($object instanceof $instance);
     }
@@ -411,7 +448,7 @@ class App implements ArrayAccess
             fastcgi_finish_request();
         }
 
-        exit();
+        exit(0);
     }
 
 

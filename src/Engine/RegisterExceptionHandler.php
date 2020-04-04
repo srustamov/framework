@@ -6,14 +6,18 @@ class RegisterExceptionHandler
 {
     private $app;
 
+    /**
+     * RegisterExceptionHandler constructor.
+     * @param App $app
+     */
     public function __construct(App $app)
     {
         $this->app = $app;
     }
 
-    public function handle()
+    public function handle(): void
     {
-        $isDev = $this->app::get('config')->get('app.debug');
+        $isDev = $this->app->get('config')->get('app.debug');
 
         if (!CONSOLE && $isDev) {
             $whoops = new \Whoops\Run;

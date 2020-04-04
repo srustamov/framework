@@ -4,7 +4,7 @@ namespace TT\Engine\Http\Routing;
 
 use ArrayAccess;
 use InvalidArgumentException;
-
+use TT\Engine\Http\Request;
 
 class Route implements ArrayAccess
 {
@@ -15,7 +15,8 @@ class Route implements ArrayAccess
         'patterns' => [],
         'domain' => null,
         'name' => null,
-        'callback' => null
+        'callback' => null,
+        'controller' => null,
     ];
 
     private $router;
@@ -310,6 +311,30 @@ class Route implements ArrayAccess
 
 
     /**
+     * @return string|null
+     */
+    public function getController($with_method = false)
+    {
+        $callback = $this->getAttribute('callback');
+
+        if(is_string($callback)  && strpos($callback, '@')) {
+            [ $controller,$method ] = explode('@',$callback,2);
+
+            $controller = rtrim($this->getAttribute('namespace'),'\\').
+                        '\\'.ltrim($controller,'\\');
+            
+            if($with_method) {
+                return [$controller,$method];
+            }
+
+            return $controller;
+        }
+
+        return null;
+    }
+
+
+    /**
      * @param $callback
      */
     protected function parseCallback($callback): void
@@ -353,9 +378,15 @@ class Route implements ArrayAccess
             }
             throw new InvalidArgumentException('Route group parameter is not callable');
         }
-        return $this->router->setBuilder($this)->$name(...$arguments);
+        return $this->router->setRoute($this)->$name(...$arguments);
 
 
+    }
+
+
+    public function run()
+    {
+        
     }
 
 

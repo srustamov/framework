@@ -8,13 +8,12 @@ namespace TT\Engine\Http\Routing;
  */
 
 
-use Closure;
 use Exception;
 use TT\Engine\App;
 use TT\Engine\Reflections;
-use TT\Engine\Http\Middleware;
 use TT\Exceptions\RouteException;
-use App\Exceptions\NotFoundException;
+use App\Exceptions\HttpNotFoundException;
+use TT\Engine\Http\Pipeline\Pipeline;
 
 class Router
 {
@@ -42,7 +41,7 @@ class Router
 
     private $prefix;
 
-    private $builder;
+    private $route;
 
     private $name;
 
@@ -60,12 +59,12 @@ class Router
     }
 
     /**
-     * @param Route $builder
+     * @param Route $route
      * @return $this
      */
-    public function setBuilder(Route $builder): self
+    public function setRoute(Route $route): self
     {
-        $this->builder = $builder;
+        $this->route = $route;
 
         return $this;
     }
@@ -78,21 +77,21 @@ class Router
      */
     public function __call($name, $arguments)
     {
-        return ($this->builder ?? new Route($this))->$name(...$arguments);
+        return ($this->route ?? new Route($this))->$name(...$arguments);
     }
 
     /**
-     * @param $methods
+     * @param array $methods
      * @param $uri
      * @param $callback
      * @return Route
      */
-    public function add($methods, $uri, $callback)
+    public function add(array $methods, $uri, $callback)
     {
-        $builder = $this->builder ?? new Route($this);
+        $route = $this->route ?? new Route($this);
 
         $uri = $this->prefix . rtrim($uri, '/') . '/';
-        $builder = $builder
+        $route = $route
             ->middleware($this->middleware)
             ->domain($this->getDomain())
             ->prependNamespace($this->namespace)
@@ -102,12 +101,12 @@ class Router
             ->setCallback($callback);
 
         foreach ($methods as $method) {
-            $this->routes[strtoupper($method)][$uri] = &$builder;
+            $this->routes[strtoupper($method)][$uri] = &$route;
         }
 
-        $this->builder = null;
+        $this->route = null;
 
-        return $builder;
+        return $route;
     }
 
 
@@ -158,19 +157,19 @@ class Router
     /**
      * @return mixed
      * @throws RouteException
-     * @throws NotFoundException
+     * @throws HttpNotFoundException
      * @throws Exception
      */
     public function run()
     {
-        $requestUri = trim($this->app->get('url')->current(), '/');
+        $requestUri = rtrim($this->app->get('url')->current(), '/');
 
         foreach ($this->routes[$this->getRequestMethod()] as $path => $route) {
 
             $arguments = [];
 
             $path = rtrim($route['domain'] . $path, '/');
-            
+
             if (preg_match('/({.+?})/', $path)) {
                 [$arguments, $uri, $path] = $this->parseRoute(
                     $requestUri,
@@ -187,30 +186,36 @@ class Router
                 $this->parseRouteParams($uri, $arguments);
             }
 
-            return $this->call($route,$arguments);
+            return $this->call($route, $arguments);
         }
 
-        if (class_exists('NotFoundException')) {
-            throw new NotFoundException;
+        if (class_exists('HttpNotFoundException')) {
+            throw new HttpNotFoundException;
         }
 
         abort(404);
     }
 
 
-    private function call($route,$arguments)
+    private function call($route, $arguments)
     {
-        $callback = $route['callback'];
+        if (is_array($route)) {
+            $this->route = (new Route($this))->setAttributes($route);
+        } else {
+            $this->route = $route;
+        }
+
+        $callback = $this->route->getCallback();
 
         if (is_string($callback) && strpos($callback, '@')) {
-            return $this->callAction($callback, $route, $arguments);
+            return $this->callController($arguments);
         }
 
         if (is_callable($callback)) {
-            return $this->callHandler($callback, $route, $arguments);
+            return $this->callHandler($arguments);
         }
 
-        throw new RouteException('Route Handler type undefined');
+        throw new RouteException('Route Callback type undefined');
     }
 
 
@@ -222,50 +227,48 @@ class Router
      * @return mixed
      * @throws Exception
      */
-    protected function callAction(string $callback, $route, $args)
+    protected function callController($args)
     {
 
-        [$controller, $method] = explode('@', $callback,2);
+        [$controller, $method] = $this->route->getController(true);
 
-        if (strpos($controller, '/') !== false) {
-            $controller = str_replace('/', '\\', $controller);
-        }
+        if (method_exists($controller, $method)) {
 
-        $class = "\\" . trim($route['namespace'], '\\') . "\\$controller";
-
-        if (method_exists($class, $method)) {
-
-            define('ACTION', strtolower($method));
-
-            define('CONTROLLER', $controller);
-
-            $this->callMiddleware($route['middleware']);
+            $this->callMiddleware($this->route->getMiddleware());
 
             $args = Reflections::methodParameters(
-                $class,
+                $controller,
                 $method,
                 $args
             );
 
             $constructorArgs = [];
 
-            if (method_exists($class, '__construct')) {
+            if (method_exists($controller, '__construct')) {
                 $constructorArgs = Reflections::methodParameters(
-                    $class,
+                    $controller,
                     '__construct'
                 );
             }
 
-            $response = call_user_func_array([new $class(...$constructorArgs), $method], $args);
+            $controller = new $controller(...$constructorArgs);
 
-            if ($this->app->isInstance($response, 'response')) {
-                return $response;
+            if ($controller instanceof Controller) {
+                $this->callMiddleware($controller->getMiddleware());
+
+                return $this->app->get('response')
+                    ->appendContent(
+                        $controller->callAction($method, $args)
+                    );
+            } else {
+                throw new RouteException(
+                    get_class($controller) . ' must have an extension ' . Controller::class
+                );
             }
-            return $this->app->get('response')->appendContent($response);
         }
 
-        if (class_exists('NotFoundException')) {
-            throw new NotFoundException;
+        if (class_exists('HttpNotFoundException')) {
+            throw new HttpNotFoundException;
         }
 
         abort(404);
@@ -279,17 +282,19 @@ class Router
      * @return mixed
      * @throws Exception
      */
-    protected function callHandler(callable $callback, $route, $arguments)
+    protected function callHandler($arguments)
     {
-        $this->callMiddleware($route['middleware']);
+        $this->callMiddleware($this->route->getMiddleware());
 
-        $arguments = Reflections::functionParameters($callback, $arguments);
+        $callback = $this->route->getCallback();
+
+        $arguments = Reflections::functionParameters(
+            $callback,
+            $arguments
+        );
 
         $response = $callback(...$arguments);
 
-        if ($this->app->isInstance($response, 'response')) {
-            return $response;
-        }
         return $this->app->get('response')->appendContent($response);
     }
 
@@ -301,11 +306,25 @@ class Router
      */
     protected function callMiddleware(array $middleware)
     {
-        foreach ($middleware as $object) {
-            [$name, $excepts, $guard] = Middleware::getExceptsAndGuard($object);
-            if (isset($this->middlewareAliases[$name])) {
-                Middleware::init($this->middlewareAliases[$name], $guard, $excepts);
+        $pipes = array_map(function ($value) {
+            if (strpos($value, ':')) {
+                [$value, $arguments] = explode(':', $value);
             }
+
+            if (isset($this->middlewareAliases[$value])) {
+                return $this->middlewareAliases[$value]
+                    . (isset($arguments) ? ':' . $arguments : '');
+            }
+            throw new RouteException('Route middleware [' . $value . '] not found');
+        }, $middleware);
+
+        if (!empty($pipes)) {
+            (new Pipeline($this->app))
+                ->send($this->app['request'])
+                ->pipe($pipes)
+                ->then(function ($request) {
+                    $this->app['request'] = $request;
+                });
         }
     }
 
@@ -363,7 +382,6 @@ class Router
         foreach ($files as $file) {
             require_once $file;
         }
-
         return $this;
     }
 
@@ -371,38 +389,32 @@ class Router
     /**
      * @param $name
      * @param array $parameters
-     * @return mixed|string|string[]|null
+     * @return mixed
      * @throws RouteException
      */
     public function getName($name, array $parameters = [])
     {
         if (isset($this->routes['NAMES'][$name])) {
-            $route = $this->routes['NAMES'][$name];
-
-            if (strpos($route, '}') !== false) {
-                if (!empty($parameters)) {
-                    foreach ($parameters as $key => $value) {
-                        $route = str_replace(['{' . $key . '}', '{' . $key . '?}'], $value, $route);
-                    }
-                }
-
-                $callback = static function ($match) {
-                    if (strpos($match[0], '?') !== false) {
+            return preg_replace_callback(
+                '/({(.+?)}\/?)/',
+                function ($match) use ($parameters, $name) {
+                    if (isset($parameters[rtrim($match[2], '?')])) {
+                        return $parameters[rtrim($match[2], '?')] . '/';
+                    } elseif (rtrim($match[2], '?') !== $match[2]) {
                         return '';
+                    } else {
+                        throw new RouteException('Route [' . $name . '] parameter [' . $match[2] . '] required');
                     }
-
-                    return $match[0];
-                };
-
-                $route = preg_replace_callback('/({.+?})/', $callback, $route);
-
-                if (strpos($route, '}') !== false) {
-                    throw new RouteException('Route url parameters required');
-                }
-            }
-
-            return $route;
+                },
+                $this->routes['NAMES'][$name]
+            );
         }
         throw new RouteException("Route name [{$name}] not found");
+    }
+
+
+    public function getCurrent()
+    {
+        return $this->route;
     }
 }

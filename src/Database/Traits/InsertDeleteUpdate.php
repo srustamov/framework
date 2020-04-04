@@ -10,7 +10,7 @@ namespace TT\Database\Traits;
  * @category    Database
  */
 
-use TT\Libraries\Arr;
+use TT\Arr;
 use TT\Exceptions\DatabaseException;
 
 trait InsertDeleteUpdate

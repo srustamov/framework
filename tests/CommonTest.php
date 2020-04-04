@@ -38,15 +38,13 @@ class CommonTest extends TestCase
 
         $_SERVER['REQUEST_URI'] = '/test/123';
 
-        Route::flush();
-
         $response = Route::get('/test/{id}', function ($id, Request $request) {
-                        $this->assertEquals($id, '123');
-                        $this->assertTrue($request->isMethod('GET'));
-                        $this->assertEquals($request->url(), '/test/123');
-                        $this->assertEquals($request->params('id'), '123');
-                        return 'Id is ' . $id;
-                    })->pattern(['id' => '[1-9]([0-9]+)?'])->run();
+            $this->assertEquals($id, '123');
+            $this->assertTrue($request->isMethod('GET'));
+            $this->assertEquals($request->url(), '/test/123');
+            $this->assertEquals($request->routeParams('id'), '123');
+            return 'Id is ' . $id;
+        })->pattern(['id' => '[1-9]([0-9]+)?'])->run();
 
         $this->assertEquals($response->getContent(), 'Id is 123');
     }
@@ -55,8 +53,6 @@ class CommonTest extends TestCase
 
     public function testRequest()
     {
-
-        Route::flush();
 
         $_SERVER['REQUEST_URI'] = '/';
 
@@ -70,15 +66,15 @@ class CommonTest extends TestCase
 
         app('request')->prepare()->method = 'POST';
 
-        Route::post('/',function(Request $request){
+        Route::post('/', function (Request $request) {
 
-            $this->assertEquals($request->id,123);
+            $this->assertEquals($request->id, 123);
             $this->assertEquals($request->email, 'rustemovv96@gmail.com');
             $this->assertEquals($request->name, 'Samir');
             $this->assertEquals($request->all(), $_POST);
 
-            $request->map(function($value,$key){
-                if($key === 'name') {
+            $request->map(function ($value, $key) {
+                if ($key === 'name') {
                     return 'Samir Rustamov';
                 }
                 return $value;
@@ -91,8 +87,6 @@ class CommonTest extends TestCase
             });
 
             $this->assertEquals($request->all(), ['name' => 'Samir Rustamov']);
-
         })->run();
-
     }
 }

@@ -4,8 +4,9 @@
 namespace TT\Database\Orm;
 
 
+use Exception;
 use RuntimeException;
-use TT\Libraries\Arr;
+use TT\Arr;
 use App\Exceptions\ModelNotFoundException;
 use TT\Database\Orm\Relations\BelongsTo;
 use TT\Database\Orm\Relations\HasMany;
@@ -95,7 +96,7 @@ class Builder
      */
     public function create(array $data)
     {
-        if($id = $this->query->insert($data,[],true)) {
+        if ($id = $this->query->insert($data, [], true)) {
             $data[$this->model->getPrimaryKey()] = $id;
             return $this->model->setAttributes($data);
         }
@@ -133,7 +134,7 @@ class Builder
     /**
      * @param mixed ...$args
      * @return mixed
-     * @throws \Exception
+     * @throws Exception
      */
     public function findOrFail(...$args)
     {
@@ -158,13 +159,13 @@ class Builder
         if ($pk === null) {
             throw new RuntimeException('No primary key defined on model.');
         }
-        /**@var $query Database */
+        /**@var $query \TT\Database\Builder */
 
         if (is_array($primaryKey)) {
             return $this->query->whereIn($pk, $primaryKey)->delete();
-        } else {
-            return $this->query->where($pk, $primaryKey)->delete();
         }
+
+        return $this->query->where($pk, $primaryKey)->delete();
     }
 
 

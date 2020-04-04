@@ -2,7 +2,7 @@
 
 use Countable;
 use ArrayAccess;
-use TT\Libraries\Arr;
+use TT\Arr;
 
 class Parameters implements ArrayAccess, Countable
 {

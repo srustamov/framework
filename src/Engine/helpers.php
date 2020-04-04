@@ -448,10 +448,10 @@ if (!function_exists('lang')) {
     function lang($word = null, $replace = [])
     {
         if ($word !== null) {
-            return App::get('language')->translate($word, $replace);
+            return App::get('translator')->translate($word, $replace);
         }
 
-        return App::get('language');
+        return App::get('translator');
     }
 }
 

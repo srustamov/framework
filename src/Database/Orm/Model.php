@@ -157,7 +157,7 @@ abstract class Model implements ArrayAccess, JsonSerializable, Countable
     /**
      * @return \TT\Database\Builder
      */
-    public function getQuery()
+    public function getQuery(): \TT\Database\Builder
     {
         return DB::setModel($this)->table($this->getTable());
     }

@@ -31,7 +31,7 @@ trait Where
      * @param $value
      * @return array
      */
-    protected function getOperatorAndValue($operator, $value): array
+    private function getOperatorAndValue($operator, $value): array
     {
         if ($operator && !$value) {
             $value = $operator;

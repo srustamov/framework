@@ -11,83 +11,83 @@ trait Methods
 {
     /**
      * @param $path
-     * @param $handler
+     * @param $callback
      * @return mixed
      */
-    public function get($path, $handler)
+    public function get($path, $callback)
     {
-        return $this->add(['GET'], $path, $handler);
+        return $this->add(['GET'], $path, $callback);
     }
 
     /**
      * @param $path
-     * @param $handler
+     * @param $callback
      * @return mixed
      */
-    public function post($path, $handler)
+    public function post($path, $callback)
     {
-        return $this->add(['POST'], $path, $handler);
+        return $this->add(['POST'], $path, $callback);
     }
 
     /**
      * @param $path
-     * @param $handler
+     * @param $callback
      * @return mixed
      */
-    public function put($path, $handler)
+    public function put($path, $callback)
     {
-        return $this->add(['PUT'], $path, $handler);
+        return $this->add(['PUT'], $path, $callback);
     }
 
     /**
      * @param $path
-     * @param $handler
+     * @param $callback
      * @return mixed
      */
-    public function delete($path, $handler)
+    public function delete($path, $callback)
     {
-        return $this->add(['DELETE'], $path, $handler);
-    }
-
-
-    /**
-     * @param $path
-     * @param $handler
-     * @return mixed
-     */
-    public function patch($path, $handler)
-    {
-        return $this->add(['PATCH'], $path, $handler);
+        return $this->add(['DELETE'], $path, $callback);
     }
 
 
     /**
      * @param $path
-     * @param $handler
+     * @param $callback
      * @return mixed
      */
-    public function options($path, $handler)
+    public function patch($path, $callback)
     {
-        return $this->add(['OPTIONS'], $path, $handler);
+        return $this->add(['PATCH'], $path, $callback);
+    }
+
+
+    /**
+     * @param $path
+     * @param $callback
+     * @return mixed
+     */
+    public function options($path, $callback)
+    {
+        return $this->add(['OPTIONS'], $path, $callback);
     }
 
     /**
      * @param $path
-     * @param $handler
+     * @param $callback
      * @return mixed
      */
-    public function form($path, $handler)
+    public function form($path, $callback)
     {
-        return $this->add(['GET','POST'], $path, $handler);
+        return $this->add(['GET','POST'], $path, $callback);
     }
 
     /**
      * @param $path
-     * @param $handler
+     * @param $callback
      * @return mixed
      */
-    public function any($path, $handler)
+    public function any($path, $callback)
     {
-        return $this->add(['GET','POST','PUT','DELETE','OPTIONS','PATCH'], $path, $handler);
+        return $this->add(['GET','POST','PUT','DELETE','OPTIONS','PATCH'], $path, $callback);
     }
 }

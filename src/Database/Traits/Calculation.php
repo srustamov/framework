@@ -1,4 +1,6 @@
-<?php namespace TT\Database\Traits;
+<?php
+
+namespace TT\Database\Traits;
 
 /**
  * @package    TT
@@ -9,85 +11,85 @@
  */
 
 
- trait Calculation
- {
-     /**
-      * @param string $column
-      * @return int|null
-      */
-     public function count(string $column = null): ?int
-     {
-         $column = $column ?? implode('', $this->select);
+trait Calculation
+{
+    /**
+     * @param string $column
+     * @return int|null
+     */
+    public function count(string $column = null): ?int
+    {
+        $column = $column ?? implode('', $this->select);
 
-         $this->select = array("COUNT({$column}) as count");
+        $this->select = array("COUNT({$column}) as count");
 
-         if ($result = $this->get(true)) {
-             return (int)$result->count;
-         }
+        if ($result = $this->get(true)) {
+            return (int) $result->count;
+        }
 
-         return null;
-     }
+        return null;
+    }
 
-     /**
-      * @param string $column
-      * @return int|null
-      */
-     public function min(string $column): ?int
-     {
-         $as_name = 'min_'.$column;
-         $this->select = array("MIN({$column}) as {$as_name}");
+    /**
+     * @param string $column
+     * @return int|null
+     */
+    public function min(string $column): ?int
+    {
+        $as_name = 'min_' . $column;
+        $this->select = array("MIN({$column}) as {$as_name}");
 
-         if ($result = $this->get(true)) {
-             return (int) $result->$as_name;
-         }
-         return null;
-     }
+        if ($result = $this->get(true)) {
+            return (int) $result->$as_name;
+        }
+        return null;
+    }
 
-     /**
-      * @param string $column
-      * @return int|null
-      */
-     public function max(string $column): ?int
-     {
-         $as_name = 'min_'.$column;
+    /**
+     * @param string $column
+     * @return int|null
+     */
+    public function max(string $column): ?int
+    {
+        $as_name = 'min_' . $column;
 
-         $this->select = array("MAX({$column}) as {$as_name}");
+        $this->select = array("MAX({$column}) as {$as_name}");
 
-         if ($result = $this->get(true)) {
-             return (int) $result->$as_name;
-         }
-         return null;
-     }
+        if ($result = $this->get(true)) {
+            return (int) $result->$as_name;
+        }
+        return null;
+    }
 
-     /**
-      * @param string $column
-      * @return mixed
-      */
-     public function avg(string $column = null)
-     {
-         $column = $column ?? implode('', $this->select);
+    /**
+     * @param string $column
+     * @return mixed
+     */
+    public function avg(string $column = null)
+    {
+        $column = $column ?? implode('', $this->select);
 
-         $this->select = array("AVG({$column}) as avg");
+        $this->select = array("AVG({$column}) as avg");
 
-         if ($result = $this->get(true)) {
-             return $result->avg;
-         }
-         return null;
-     }
+        if ($result = $this->get(true)) {
+            return $result->avg;
+        }
+        return null;
+    }
 
-     /**
-      * @param string|null $column
-      * @return mixed
-      */
-     public function sum(string $column = null)
-     {
-         $column = $column ?? implode('', $this->select);
+    /**
+     * @param string|null $column
+     * @return mixed
+     */
+    public function sum(string $column = null)
+    {
+        $column = $column ?? implode('', $this->select);
 
-         $this->select = array("SUM({$column}) as sum");
+        $this->select = array("SUM({$column}) as sum");
 
-         if ($result = $this->get(true)) {
-             return $result->sum;
-         }
-         return null;
-     }
- }
+        if ($result = $this->get(true)) {
+            return $result->sum;
+        }
+        return null;
+    }
+}

@@ -17,7 +17,9 @@ use TT\Engine\App;
  * @method static get($first = false,$fetch_style = \PDO::FETCH_OBJ)
  * @method static exec(string $query)
  * @method static setModel(\TT\Database\Orm\Model $getInstance): \TT\Database\Builder
+ * @method static pdo(string $string = null)
  */
+
 class DB extends Facade
 {
     protected static function getFacadeAccessor()

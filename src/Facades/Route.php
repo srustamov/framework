@@ -6,6 +6,7 @@
  * @link https://github.com/srustamov/TT
  * @method static importRouteFiles(array $files)
  * @method static getRoutes()
+ * @method static getCurrent()
  * @method static setRoutes(array $routes)
  * @method static getName($name, array $parameters)
  * @method static get($path, $handler): self
@@ -19,8 +20,10 @@
  * @method static group($group_parameters, \Closure $callback)
  * @method static name($name): self
  * @method static pattern($pattern): self
+ * @method static middleware($middleware): self
+ * @method static domain($domain): self
+ * @method static prefix($prefix): self
  * @method static run()
- * @method static flush()
  */
 
 

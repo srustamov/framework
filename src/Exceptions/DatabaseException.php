@@ -2,8 +2,13 @@
 
 class DatabaseException extends \RuntimeException
 {
-    public function __construct($message ='', $query = '')
+    public function __construct($message ='', $query = null)
     {
-        parent::__construct(" $message <br />"."[QUERY: $query]");
+        if($query) {
+            $message .= !CONSOLE
+                        ? '\n SQL : <b style="color: #97310e">'.$query.'</b>'
+                        : '<br/> SQL :[ $query ]';
+        }
+        parent::__construct($message);
     }
 }

@@ -49,9 +49,9 @@ class Builder extends Connection
 
     /**
      * @param Model $model
-     * @return Builder
+     * @return self
      */
-    public function setModel(Model $model): Builder
+    public function setModel(Model $model): self
     {
         $this->model = $model;
 
@@ -198,9 +198,9 @@ class Builder extends Connection
 
     /**
      * @param Closure $callback
-     * @return Builder
+     * @return $this
      */
-    public function transaction(Closure $callback = null): Builder
+    public function transaction(Closure $callback = null): self
     {
         $this->pdo->beginTransaction();
 
@@ -216,7 +216,7 @@ class Builder extends Connection
      * @param String $table
      * @return $this
      */
-    public function table(String $table): Builder
+    public function table(String $table): self
     {
         $this->table = $this->config[$this->group]['prefix'] . $table;
 
@@ -258,7 +258,7 @@ class Builder extends Connection
      * @param $select
      * @return $this
      */
-    public function select($select): Builder
+    public function select($select): self
     {
         if (is_array($select)) {
             $select = implode(',', $select);
@@ -274,7 +274,7 @@ class Builder extends Connection
      * @param int $offset
      * @return Builder
      */
-    public function limit($limit, $offset = 0): Builder
+    public function limit($limit, $offset = 0): self
     {
         $this->limit[] = ' LIMIT ' . $offset . ',' . $limit;
 
@@ -286,7 +286,7 @@ class Builder extends Connection
      * @param string $sort
      * @return $this
      */
-    public function orderBy($column, $sort = 'ASC'): Builder
+    public function orderBy($column, $sort = 'ASC'): self
     {
         $this->orderBy[] = ' ORDER BY ' . $column . ' ' . strtoupper($sort);
 
@@ -296,7 +296,7 @@ class Builder extends Connection
     /**
      * @return Builder
      */
-    public function orderByRand(): Builder
+    public function orderByRand(): self
     {
         $this->orderBy[] = ' ORDER BY RAND() ';
 
@@ -307,7 +307,7 @@ class Builder extends Connection
      * @param $column
      * @return $this
      */
-    public function groupBy($column): Builder
+    public function groupBy($column): self
     {
         $this->groupBy[] = ' GROUP BY ' . $column;
         return $this;
