@@ -1,25 +1,30 @@
-<?php namespace TT\Auth\Drivers;
+<?php
 
-use TT\Facades\DB;
-use TT\Facades\Http;
+namespace TT\Auth\Drivers;
+
+use TT\Database\Builder;
+use TT\Http;
 
 class DatabaseAttemptDriver implements AttemptDriverInterface
 {
-    protected $guard;
+    private $guard;
 
-    protected $ip;
+    private $builder;
 
-    public function __construct(string $guard)
+    private $http;
+
+    public function __construct(Builder $builder, Http $http, $guard)
     {
         $this->guard = $guard;
-
-        $this->ip = Http::ip();
+        $this->builder = $builder;
+        $this->http = $http;
+        $this->guard = $guard;
     }
 
     public function getAttemptsCountOrFail()
     {
-        return DB::table('attempts')->where([
-            'ip' => $this->ip,
+        return $this->builder->table('attempts')->where([
+            'ip' => $this->http->ip(),
             'guard' => $this->guard
         ])->first();
     }
@@ -27,9 +32,9 @@ class DatabaseAttemptDriver implements AttemptDriverInterface
     public function increment()
     {
         if ($this->getAttemptsCountOrFail()) {
-            DB::pdo()->query("UPDATE attempts SET count = count+1 WHERE ip ='{$this->ip}' AND guard='{$this->guard}'");
+            $this->builder->pdo()->query("UPDATE attempts SET count = count+1 WHERE ip ='{$this->http->ip()}' AND guard='{$this->guard}'");
         } else {
-            DB::pdo()->query("INSERT INTO attempts SET ip = '{$this->ip}',guard='{$this->guard}',count=1");
+            $this->builder->query("INSERT INTO attempts SET ip = '{$this->http->ip()}',guard='{$this->guard}',count=1");
         }
     }
 
@@ -38,20 +43,20 @@ class DatabaseAttemptDriver implements AttemptDriverInterface
     {
         $time = strtotime("+ {$lockTime} seconds");
 
-        DB::pdo()->query("UPDATE attempts SET expiredate = '{$time}' WHERE ip ='{$this->ip}' AND guard='{$this->guard}'");
+        $this->builder->pdo()->query("UPDATE attempts SET expiredate = '{$time}' WHERE ip ='{$this->http->ip()}' AND guard='{$this->guard}'");
     }
 
 
     public function deleteAttempt()
     {
-        DB::pdo()->query("DELETE FROM attempts WHERE ip ='{$this->ip}' AND guard='{$this->guard}'");
+        $this->builder->pdo()->query("DELETE FROM attempts WHERE ip ='{$this->http->ip()}' AND guard='{$this->guard}'");
     }
 
 
 
     public function expireTimeOrFail()
     {
-        $result = DB::pdo()->query("SELECT expiredate FROM attempts WHERE ip='{$this->ip}' AND guard='{$this->guard}'");
+        $result = $this->builder->pdo()->query("SELECT expiredate FROM attempts WHERE ip='{$this->http->ip()}' AND guard='{$this->guard}'");
 
         if ($result->rowCount() > 0) {
             return $result->fetch()->expiredate;

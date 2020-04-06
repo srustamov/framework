@@ -1,9 +1,11 @@
-<?php namespace TT\Cache\Adapter;
+<?php
 
+namespace TT\Cache\Adapter;
+
+use BadMethodCallException;
 use Closure;
 use ReflectionException;
 use RuntimeException;
-use TT\Engine\App;
 use TT\File;
 
 class FileStore implements CacheStoreInterface
@@ -24,13 +26,20 @@ class FileStore implements CacheStoreInterface
 
     /**
      * FileStore constructor.
-     * @throws ReflectionException
+     * @param File $file
+     * @param array $config
      */
-    public function __construct()
+    public function __construct(File $file, array $config)
     {
-        $this->path = App::get('config')
-            ->get('cache.file', ['path' => path('storage/cache/data')])['path'];
-        $this->file = App::get('file');
+        if (!array_key_exists('path', $config)) {
+            throw new RuntimeException(sprintf(
+                'Cache adapter [%s] required config [path] parameter',
+                static::class
+            ));
+        }
+        $this->path = $config['path'];
+
+        $this->file = $file;
 
         $this->gc();
     }
@@ -161,13 +170,17 @@ class FileStore implements CacheStoreInterface
     private function createDir($paths)
     {
         if (!file_exists($paths->fullPath)) {
-            if (!file_exists($this->path . '/' . $paths->path1 . '/') &&
-                !mkdir($concurrentDirectory = $this->path . '/' . $paths->path1 . '/', 0755, false) && !is_dir($concurrentDirectory)) {
+            if (
+                !file_exists($this->path . '/' . $paths->path1 . '/') &&
+                !mkdir($concurrentDirectory = $this->path . '/' . $paths->path1 . '/', 0755, false) && !is_dir($concurrentDirectory)
+            ) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
             }
 
-            if (!mkdir($concurrentDirectory = $this->path . '/' . $paths->path1 . '/' . $paths->path2 . '/', 0755, false)
-                && !is_dir($concurrentDirectory)) {
+            if (
+                !mkdir($concurrentDirectory = $this->path . '/' . $paths->path1 . '/' . $paths->path2 . '/', 0755, false)
+                && !is_dir($concurrentDirectory)
+            ) {
                 throw new RuntimeException(sprintf('Directory "%s" was not created', $concurrentDirectory));
             }
         }
@@ -223,7 +236,8 @@ class FileStore implements CacheStoreInterface
                 unlink($paths->fullPath);
 
                 if ($this->file
-                    ->dirIsEmpty($this->path . '/' . $paths->path1 . '/' . $paths->path2)) {
+                    ->dirIsEmpty($this->path . '/' . $paths->path1 . '/' . $paths->path2)
+                ) {
                     rmdir($this->path . '/' . $paths->path1 . '/' . $paths->path2);
 
                     if ($this->file->dirIsEmpty($this->path . '/' . $paths->path1)) {
@@ -244,7 +258,7 @@ class FileStore implements CacheStoreInterface
 
         $fullPath = $this->path . '/' . $parts[0] . '/' . $parts[1] . '/' . $hash;
 
-        return (object)array('path1' => $parts[0], 'path2' => $parts[1], 'fullPath' => $fullPath);
+        return (object) array('path1' => $parts[0], 'path2' => $parts[1], 'fullPath' => $fullPath);
     }
 
 
@@ -296,7 +310,7 @@ class FileStore implements CacheStoreInterface
 
     public function __call($method, $args)
     {
-        throw new CacheFileStoreException("Call to undefined method Cache::$method()");
+        throw new BadMethodCallException("Call to undefined method Cache::$method()");
     }
 
 

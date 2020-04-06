@@ -1,6 +1,8 @@
-<?php namespace TT\Cache\Adapter;
+<?php
 
-use TT\Facades\Redis as DRedis;
+namespace TT\Cache\Adapter;
+
+use TT\Redis;
 
 class RedisStore implements CacheStoreInterface
 {
@@ -10,6 +12,16 @@ class RedisStore implements CacheStoreInterface
 
     private $expires;
 
+    private $redis;
+
+    /**
+     * RedisStore constructor.
+     * @param Redis $redis
+     */
+    public function __construct(Redis $redis)
+    {
+        $this->redis = $redis;
+    }
 
 
     public function put(String $key, $value, $expires = null, $forever = false)
@@ -18,14 +30,14 @@ class RedisStore implements CacheStoreInterface
 
         $this->key = $key;
 
-        if (is_null($expires)) {
+        if ($expires === null) {
             $expires = $this->expires;
         }
 
-        if (is_null($expires)) {
-            DRedis::set($key, $value);
+        if ($expires === null) {
+            $this->redis->set($key, $value);
         } else {
-            DRedis::setex($key, $expires, $value);
+            $this->redis->setex($key, $expires, $value);
         }
 
         return $this;
@@ -38,23 +50,23 @@ class RedisStore implements CacheStoreInterface
 
     public function has($key)
     {
-        return DRedis::exists($key);
+        return $this->redis->exists($key);
     }
 
     public function get($key)
     {
-        return DRedis::get($key);
+        return $this->redis->get($key);
     }
 
     public function forget($key)
     {
-        DRedis::del($key);
+        $this->redis->del($key);
     }
 
     public function expires(Int $expires)
     {
-        if (!is_null($this->put)) {
-            DRedis::expire($this->key, $expires);
+        if ($this->put !== null) {
+            $this->redis->expire($this->key, $expires);
         } else {
             $this->expires = $expires;
         }
@@ -83,22 +95,22 @@ class RedisStore implements CacheStoreInterface
 
     public function flush()
     {
-        DRedis::flushAll();
+        $this->redis->flushAll();
     }
 
     public function __get($key)
     {
-        return DRedis::get($key);
+        return $this->redis->get($key);
     }
 
 
     public function __call($method, $args)
     {
-        return DRedis::$method(...$args);
+        return $this->redis->$method(...$args);
     }
 
     public function close()
     {
-        DRedis::close();
+        $this->redis->close();
     }
 }

@@ -13,7 +13,7 @@ class SessionFileHandler implements SessionHandlerInterface
 
     public function __construct()
     {
-        $this->register();
+        // $this->register();
     }
 
     public function register()

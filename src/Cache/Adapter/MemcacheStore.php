@@ -1,4 +1,6 @@
-<?php namespace TT\Cache\Adapter;
+<?php
+
+namespace TT\Cache\Adapter;
 
 use TT\Engine\App;
 
@@ -13,10 +15,12 @@ class MemcacheStore implements CacheStoreInterface
     private $memcache;
 
 
-    public function __construct()
+    /**
+     * MemcacheStore constructor.
+     * @param array $config
+     */
+    public function __construct(array $config)
     {
-        $config = App::get('config')->get('cache.memcache');
-
         if (class_exists('\\Memcache')) {
             $this->memcache = new \Memcache;
         } elseif (class_exists('\\Memcached')) {
@@ -106,7 +110,8 @@ class MemcacheStore implements CacheStoreInterface
             $this->memcache->set(
                 $this->key,
                 $this->memcache->get($this->key),
-                null, $expires
+                null,
+                $expires
             );
 
             $this->put = false;

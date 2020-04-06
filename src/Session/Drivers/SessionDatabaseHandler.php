@@ -2,17 +2,29 @@
 
 namespace TT\Session\Drivers;
 
+use RuntimeException;
 use SessionHandlerInterface;
-use TT\Facades\DB;
+use TT\Database\Builder;
 
-class SessionDBHandler implements SessionHandlerInterface
+class SessionDatabaseHandler implements SessionHandlerInterface
 {
     private $table;
 
+    private $db;
 
-    public function __construct($table)
+
+    public function __construct(Builder $db, $config)
     {
-        $this->table  = $table;
+        $this->db = $db;
+
+        if(!isset($config['table'])) {
+            throw new RuntimeException(sprintf(
+                '[%s] required config [table] name',
+                static::class
+            ));
+        }
+
+        $this->table = $config['table'];
     }
 
     public function register()
@@ -38,7 +50,7 @@ class SessionDBHandler implements SessionHandlerInterface
 
     public function read($id): String
     {
-        $result = DB::pdo()->query("SELECT data FROM {$this->table} WHERE session_id='{$id}'AND expires > " . time() . "");
+        $result = $this->db->pdo()->query("SELECT data FROM {$this->table} WHERE session_id='{$id}'AND expires > " . time() . "");
 
         if ($result->rowCount() > 0) {
             return $result->fetch()->data;
@@ -52,7 +64,7 @@ class SessionDBHandler implements SessionHandlerInterface
     {
         $time    = time() + (int) ini_get('session.gc_maxlifetime');
 
-        $result  = DB::pdo()->query("REPLACE INTO {$this->table} SET session_id ='{$id}',expires = {$time},data ='{$data}'");
+        $result  = $this->db->pdo()->query("REPLACE INTO {$this->table} SET session_id ='{$id}',expires = {$time},data ='{$data}'");
 
         return $result ? true : false;
     }
@@ -68,7 +80,7 @@ class SessionDBHandler implements SessionHandlerInterface
     public function destroy($id): Bool
     {
         try {
-            DB::pdo()->query("DELETE FROM {$this->table} WHERE session_id = '{$id}'");
+            $this->db->pdo()->query("DELETE FROM {$this->table} WHERE session_id = '{$id}'");
         } catch (\PDOException $e) {
         }
 
@@ -79,7 +91,7 @@ class SessionDBHandler implements SessionHandlerInterface
 
     public function gc($maxlifetime): Bool
     {
-        DB::pdo()->query("DELETE FROM {$this->table} WHERE expires < " . (time() + $maxlifetime));
+        $this->db->pdo()->query("DELETE FROM {$this->table} WHERE expires < " . (time() + $maxlifetime));
 
         return true;
     }

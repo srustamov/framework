@@ -1,4 +1,6 @@
-<?php namespace TT\Cache\Adapter;
+<?php
+
+namespace TT\Cache\Adapter;
 
 interface CacheStoreInterface
 {

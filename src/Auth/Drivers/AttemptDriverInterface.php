@@ -1,9 +1,9 @@
-<?php namespace TT\Auth\Drivers;
+<?php
+
+namespace TT\Auth\Drivers;
 
 interface AttemptDriverInterface
 {
-    public function __construct(string $guard);
-
     public function getAttemptsCountOrFail();
 
     public function increment();

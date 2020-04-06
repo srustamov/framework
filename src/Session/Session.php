@@ -15,16 +15,29 @@ use Closure;
 use Countable;
 use Exception;
 use ArrayAccess;
-use TT\Facades\Config;
-use Predis\Session\Handler;
-use TT\Redis;
-use TT\Facades\OpenSsl;
-use TT\Session\Drivers\SessionFileHandler;
-use TT\Session\Drivers\SessionDBHandler;
+use TT\Engine\App;
+use TT\Engine\Config;
 
 class Session implements ArrayAccess, Countable
 {
     protected $config;
+
+    protected $drivers = [
+        'database' => \TT\Session\Drivers\SessionDatabaseHandler::class,
+        'redis' => \Predis\Session\Handler::class,
+        'file' => \TT\Session\Drivers\SessionFileHandler::class,
+    ];
+
+    protected $app;
+
+
+
+    public function __construct(App $app)
+    {
+        $this->app = $app;
+
+        $this->config = $this->app['config']->get('session');
+    }
 
 
     /**
@@ -33,8 +46,6 @@ class Session implements ArrayAccess, Countable
     public function start()
     {
         if (!$this->isStarted()) {
-            $this->config = Config::get('session');
-
             ini_set('session.cookie_httponly', $this->config['cookie']['http_only']);
             ini_set('session.use_only_cookies', $this->config['only_cookies']);
             ini_set('session.gc_maxlifetime', $this->config['lifetime']);
@@ -50,17 +61,15 @@ class Session implements ArrayAccess, Countable
 
             session_name($this->config['cookie']['name']);
 
-            switch ($this->config['driver']) {
-                case 'database':
-                    (new SessionDBHandler($this->config['table']))->register();
-                    break;
-                case 'redis':
-                    (new Handler(new Redis()))->register();
-                    break;
-                default:
-                    (new SessionFileHandler())->register();
-                    break;
+            if (
+                isset($this->config['driver']) &&
+                array_key_exists($this->config['driver'], $this->drivers)
+            ) {
+                $this->app->make(
+                    $this->drivers[$this->config['driver']]
+                )->register();
             }
+
 
             register_shutdown_function('session_write_close');
 
@@ -78,6 +87,9 @@ class Session implements ArrayAccess, Countable
     }
 
 
+    /**
+     * @return bool
+     */
     public function isStarted(): bool
     {
         return !(session_status() === PHP_SESSION_NONE);
@@ -109,7 +121,9 @@ class Session implements ArrayAccess, Countable
     private function token(): String
     {
         if (!$this->has('_token')) {
-            $token = base64_encode(OpenSsl::random(40));
+            $token = base64_encode(
+                openssl_random_pseudo_bytes(40)
+            );
 
             $this->set('_token', $token);
         } else {
@@ -279,6 +293,16 @@ class Session implements ArrayAccess, Countable
             ? $this->get($method)
             : $this->set($method, $value);
     }
+
+
+    /**
+     * @return bool
+     */
+    public function isEmpty(): bool
+    {
+        return empty($_SESSION);
+    }
+
 
 
     /**

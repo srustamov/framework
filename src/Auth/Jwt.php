@@ -31,7 +31,7 @@ class Jwt
     protected $claims = [];
 
 
-    public function __construct()
+    public function __construct(array $config = null)
     {
         $this->builder = new Builder();
 
@@ -39,7 +39,7 @@ class Jwt
 
         $this->signer = new Sha256();
 
-        $this->config = config('jwt');
+        $this->config = $config ?? config('jwt');
     }
 
 

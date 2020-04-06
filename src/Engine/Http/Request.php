@@ -16,6 +16,7 @@ use ArrayAccess;
 use Serializable;
 use JsonSerializable;
 use TT\Engine\App;
+use TT\Facades\Route;
 
 /**
  * @method all()
@@ -110,7 +111,7 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
         if ($this->isJson()) {
             $content = file_get_contents('php://input');
 
-            $data = json_decode($content,true);
+            $data = json_decode($content, true);
 
             if (json_last_error() === JSON_ERROR_NONE) {
                 return $data;
@@ -143,9 +144,9 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
      * @param $key
      * @return bool|mixed
      */
-    public function routeParams($key = null,$default = null)
+    public function routeParams($key = null, $default = null)
     {
-        if(!$key) {
+        if (!$key) {
             return $this->routeParams;
         }
         return $this->routeParams[$key] ?? $default;
@@ -254,7 +255,7 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
      * @param string $name
      * @return UploadedFile
      */
-    public function file(string $name):?UploadedFile
+    public function file(string $name): ?UploadedFile
     {
         return $this->files->get($name);
     }
@@ -341,21 +342,23 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
      */
     public function url()
     {
-        return $this->app('url')->request();
+        return $this->app('url')->getCurrent();
     }
 
 
     /**
-     * @param null $method
-     * @return bool|mixed|string
+     * @param null $action
+     * @return null|string
      */
-    public function controller($method = null)
+    public function controller($action = null):?string
     {
-        if (!$method) {
-            return defined('CONTROLLER') ? CONTROLLER : false;
+        if ($route = $this->app('route')->getCurrent()) {
+            if ($callback = $route->getController($action)) {
+                return $action ? ($callback[1] ?? null) : ($callback[0]);
+            }
         }
 
-        return defined('ACTION') ? ACTION : false;
+        return null;
     }
 
 
@@ -522,7 +525,7 @@ class Request implements ArrayAccess, Countable, Serializable, JsonSerializable
      */
     public function unSerialize($serialized)
     {
-        unserialize($serialized,['allowed_classes' => []]);
+        unserialize($serialized, ['allowed_classes' => []]);
     }
 
 

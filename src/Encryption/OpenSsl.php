@@ -31,12 +31,12 @@ class OpenSsl implements EncryptionInterface
      * @throws EncryptException
      * @throws Exception
      */
-    public function __construct()
+    public function __construct(string $key = null)
     {
         if(!extension_loaded('openssl')) {
             throw new EncryptException('Openssl extension not loaded');
         }
-        $key = Config::get('app.key', false);
+        $key = $key ?? Config::get('app.key', false);
 
         if (!$key && !CONSOLE) {
             throw new EncryptException('Application Down! Application Encryption key not found!');

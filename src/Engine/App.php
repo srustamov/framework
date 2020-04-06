@@ -71,7 +71,7 @@ class App implements ArrayAccess
         'str' => 'TT\Str',
         'string' => 'TT\Str',
         'storage' => 'TT\Storage',
-        'url' => 'TT\Url',
+        'url' => 'TT\Uri',
         'validator' => 'TT\Validator',
         'view' => 'TT\View\View',
     ];
@@ -313,9 +313,7 @@ class App implements ArrayAccess
      */
     public function appPath($path = ''): string
     {
-        return $this->paths['base']
-            . DS . 'app' . DS
-            . ltrim($path, DS);
+        return $this->paths['base'] . DS . 'app' . DS . ltrim($path, DS);
     }
 
     /**
@@ -394,7 +392,8 @@ class App implements ArrayAccess
 
             static::$classes[$class] = new $class(
                 Reflections::methodParameters(
-                    $class, '__construct',
+                    $class,
+                    '__construct',
                     $args
                 )
             );
@@ -417,6 +416,21 @@ class App implements ArrayAccess
         } elseif (is_object($object)) {
             self::$classes[$className] = $object;
         }
+    }
+
+
+    public function make($className, ...$args)
+    {
+        if (!class_exists($className)) {
+            throw new RuntimeException(sprintf('Class [%s] not found', $className));
+        }
+        return new $className(
+            ...Reflections::methodParameters(
+                $className,
+                '__construct',
+                $args
+            )
+        );
     }
 
 

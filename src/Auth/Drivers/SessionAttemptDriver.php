@@ -1,19 +1,25 @@
-<?php namespace TT\Auth\Drivers;
+<?php
 
-use TT\Facades\Session;
+namespace TT\Auth\Drivers;
+
+use TT\Session\Session;
 
 class SessionAttemptDriver implements AttemptDriverInterface
 {
-    protected $guard;
+    private $session;
 
-    public function __construct(string $guard)
+    private $guard;
+
+    public function __construct(Session $session, $guard)
     {
+        $this->session = $session;
+
         $this->guard = $guard;
     }
 
     public function getAttemptsCountOrFail()
     {
-        if ($count = Session::get('AUTH_ATTEMPT_COUNT_'.$this->guard)) {
+        if ($count = $this->session->get('AUTH_ATTEMPT_COUNT_' . $this->guard)) {
             return (object) array('count' => $count);
         }
         return false;
@@ -22,11 +28,11 @@ class SessionAttemptDriver implements AttemptDriverInterface
     public function increment()
     {
         if ($this->getAttemptsCountOrFail()) {
-            Session::set('AUTH_ATTEMPT_COUNT_'.$this->guard, function ($session) {
-                return $session->get('AUTH_ATTEMPT_COUNT_'.$this->guard)+1;
+            $this->session->set('AUTH_ATTEMPT_COUNT_' . $this->guard, function ($session) {
+                return $session->get('AUTH_ATTEMPT_COUNT_' . $this->guard) + 1;
             });
         } else {
-            Session::set('AUTH_ATTEMPT_COUNT_'.$this->guard, 1);
+            $this->session->set('AUTH_ATTEMPT_COUNT_' . $this->guard, 1);
         }
     }
 
@@ -34,20 +40,20 @@ class SessionAttemptDriver implements AttemptDriverInterface
 
     public function startLockTime($lockTime)
     {
-        Session::set('AUTH_ATTEMPT_EXPIRE_'.$this->guard, strtotime("+ {$lockTime} seconds"));
+        $this->session->set('AUTH_ATTEMPT_EXPIRE_' . $this->guard, strtotime("+ {$lockTime} seconds"));
     }
 
 
     public function deleteAttempt()
     {
-        Session::delete(array('AUTH_ATTEMPT_COUNT_'.$this->guard,'AUTH_ATTEMPT_EXPIRE_'.$this->guard));
+        $this->session->delete(array('AUTH_ATTEMPT_COUNT_' . $this->guard, 'AUTH_ATTEMPT_EXPIRE_' . $this->guard));
     }
 
 
 
     public function expireTimeOrFail()
     {
-        return Session::get('AUTH_ATTEMPT_EXPIRE_'.$this->guard);
+        return $this->session->get('AUTH_ATTEMPT_EXPIRE_' . $this->guard);
     }
 
 

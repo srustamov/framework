@@ -6,7 +6,7 @@
  * @link https://github.com/srustamov/TT
  * @method static importRouteFiles(array $files)
  * @method static getRoutes()
- * @method static getCurrent()
+ * @method static getCurrent(): \TT\Engine\Http\Route
  * @method static setRoutes(array $routes)
  * @method static getName($name, array $parameters)
  * @method static get($path, $handler): self

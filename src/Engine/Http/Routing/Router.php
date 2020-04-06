@@ -143,12 +143,12 @@ class Router
                 $domain = str_replace(['https://', 'http://'], '', $domain);
             }
 
-            $this->domain = $this->app->get('url')->scheme() . '://' . $domain;
+            $this->domain = $this->app->get('url')->getScheme() . '://' . $domain;
 
             return $this;
         }
 
-        $domain = $this->domain ?? $this->app->get('url')->base();
+        $domain = $this->domain ?? $this->app->get('url')->getBase();
 
         return rtrim($domain, '/');
     }
@@ -162,7 +162,8 @@ class Router
      */
     public function run()
     {
-        $requestUri = rtrim($this->app->get('url')->current(), '/');
+        $requestUri = rtrim($this->app->get('url')->getCurrent(), '/');
+
 
         foreach ($this->routes[$this->getRequestMethod()] as $path => $route) {
 
@@ -181,7 +182,7 @@ class Router
             if (!preg_match("#^$path$#", $requestUri)) {
                 continue;
             }
-
+            
             if (isset($uri)) {
                 $this->parseRouteParams($uri, $arguments);
             }

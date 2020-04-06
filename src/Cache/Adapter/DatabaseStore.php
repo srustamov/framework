@@ -1,7 +1,9 @@
-<?php namespace TT\Cache\Adapter;
+<?php
 
-use TT\Engine\App;
-use TT\Facades\DB;
+namespace TT\Cache\Adapter;
+
+use RuntimeException;
+use TT\Database\Builder;
 
 class DatabaseStore implements CacheStoreInterface
 {
@@ -13,11 +15,26 @@ class DatabaseStore implements CacheStoreInterface
 
     private $table;
 
+    private $db;
 
-    public function __construct()
+
+    /**
+     * DatabaseStore constructor.
+     * @param Builder $db
+     * @param array $config
+     */
+    public function __construct(Builder $db, array $config)
     {
-        $this->table = App::get('config')
-            ->get('cache.database', ['table' => 'cache'])['table'];
+        if (!array_key_exists('table', $config)) {
+            throw new RuntimeException(sprintf(
+                'Cache adapter [%s] required config [table] parameter',
+                static::class
+            ));
+        }
+
+        $this->table = $config['table'];
+
+        $this->db = $db;
 
         $this->gc();
     }
@@ -38,16 +55,16 @@ class DatabaseStore implements CacheStoreInterface
 
                 $this->key = $key;
 
-                DB::pdo("REPLACE INTO $this->table SET cache_key= '$key',cache_value='$value'");
+                $this->db->pdo("REPLACE INTO $this->table SET cache_key= '$key',cache_value='$value'");
             } else {
                 $expires = time() + $this->expires;
 
-                DB::pdo("REPLACE INTO $this->table SET cache_key='$key',cache_value='$value', expires=" . ($forever ? 0 : $expires));
+                $this->db->pdo("REPLACE INTO $this->table SET cache_key='$key',cache_value='$value', expires=" . ($forever ? 0 : $expires));
 
                 $this->expires = null;
             }
         } else {
-            DB::pdo("REPLACE INTO $this->table SET cache_key='$key',cache_value='$value' ,expires=$expires");
+            $this->db->pdo("REPLACE INTO $this->table SET cache_key='$key',cache_value='$value' ,expires=$expires");
 
             $this->expires = null;
         }
@@ -71,7 +88,7 @@ class DatabaseStore implements CacheStoreInterface
      */
     public function has($key): Bool
     {
-        return (bool)DB::table($this->table)->where('cache_key', $key)->first();
+        return (bool) $this->db->table($this->table)->where('cache_key', $key)->first();
     }
 
     /**
@@ -80,7 +97,7 @@ class DatabaseStore implements CacheStoreInterface
      */
     public function get($key)
     {
-        return DB::table($this->table)->where('cache_key', $key)->first();
+        return $this->db->table($this->table)->where('cache_key', $key)->first();
     }
 
     /**
@@ -89,7 +106,7 @@ class DatabaseStore implements CacheStoreInterface
      */
     public function forget($key)
     {
-        return DB::table($this->table)->where('cache_key', $key)->delete();
+        return $this->db->table($this->table)->where('cache_key', $key)->delete();
     }
 
     /**
@@ -99,7 +116,7 @@ class DatabaseStore implements CacheStoreInterface
     public function expires(Int $expires)
     {
         if ($this->put && $this->key !== null) {
-            DB::table($this->table)
+            $this->db->table($this->table)
                 ->where('cache_key', $this->key)
                 ->update(['expires' => time() + $expires]);
 
@@ -147,7 +164,7 @@ class DatabaseStore implements CacheStoreInterface
 
     public function flush()
     {
-        DB::table($this->table)->truncate();
+        $this->db->table($this->table)->truncate();
     }
 
     /**
@@ -155,7 +172,7 @@ class DatabaseStore implements CacheStoreInterface
      */
     private function gc()
     {
-        DB::pdo('DELETE FROM ' .$this->table. ' WHERE expires < ' . time() . ' AND expires != 0');
+        $this->db->pdo('DELETE FROM ' . $this->table . ' WHERE expires < ' . time() . ' AND expires != 0');
     }
 
 

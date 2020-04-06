@@ -1,4 +1,6 @@
-<?php namespace TT\Auth;
+<?php
+
+namespace TT\Auth;
 
 /**
  * @package TT
@@ -13,10 +15,10 @@ use Exception;
 use RuntimeException;
 use TT\Database\Orm\Model;
 use InvalidArgumentException;
-use TT\Facades\Session;
-use TT\Facades\Cookie;
-use TT\Facades\Config;
-use TT\Facades\Hash;
+use TT\Cookie;
+use TT\Engine\App;
+use TT\Hash;
+use TT\Session\Session;
 
 class Authentication implements \ArrayAccess, \JsonSerializable
 {
@@ -33,6 +35,12 @@ class Authentication implements \ArrayAccess, \JsonSerializable
 
     protected $attemptDriverName;
 
+    protected $attemptDrivers = [
+        'session' => Drivers\SessionAttemptDriver::class,
+        'redis' => Drivers\RedisAttemptDriver::class,
+        'database' => Drivers\DatabaseAttemptDriver::class,
+    ];
+
     protected $passwordName;
 
     protected $guard = 'default';
@@ -46,12 +54,42 @@ class Authentication implements \ArrayAccess, \JsonSerializable
     protected $user;
 
     /**@var Model*/
-    protected $model;
+    private $model;
+
+    private $session;
+
+    private $cookie;
+
+    private $hash;
+
+    private $secret;
+
+    private $app;
 
 
-    public function __construct()
-    {
-        $this->config = Config::get('authentication.guards');
+    public function __construct(
+        App $app,
+        Session $session,
+        Cookie $cookie,
+        Hash $hash,
+        array $config = null,
+        string $secret = null
+    ) {
+        $this->session = $session;
+        $this->cookie = $cookie;
+        $this->hash = $hash;
+        $this->app = $app;
+
+        if (!$config) {
+            $config = $this->app['config']->get('authentication.guards');
+        }
+
+        if (!$secret) {
+            $this->secret = $this->app['config']->get('app.key');
+        }
+
+        $this->config = $config;
+
 
         $this->guardBootIfNotBoot();
     }
@@ -123,7 +161,7 @@ class Authentication implements \ArrayAccess, \JsonSerializable
             $this->user[$guard] = $user;
         }
         if (!$this->user[$guard]) {
-            if ($authId = Session::get(md5($guard).'-id')) {
+            if ($authId = $this->session->get(md5($guard) . '-id')) {
                 $user = $this->model[$guard]->find($authId);
                 $this->user[$guard] = $user;
             }
@@ -167,7 +205,7 @@ class Authentication implements \ArrayAccess, \JsonSerializable
         }
 
         if ($user = $this->model[$this->guard]->find($credentials)) {
-            if (Hash::check($password, $user->password)) {
+            if ($this->hash->check($password, $user->password)) {
                 if ($this->throttle[$this->guard]) {
                     $this->attemptDriver[$this->guard]->deleteAttempt();
                 }
@@ -214,9 +252,9 @@ class Authentication implements \ArrayAccess, \JsonSerializable
             return true;
         }
 
-        if (Session::get(md5($this->guard).'-login') === true) {
+        if ($this->session->get(md5($this->guard) . '-login') === true) {
             if ($this->user()) {
-                $authId = Session::get(md5($this->guard).'-id');
+                $authId = $this->session->get(md5($this->guard) . '-id');
                 if ($authId && $this->user[$this->guard]->id === $authId) {
                     return true;
                 }
@@ -250,8 +288,8 @@ class Authentication implements \ArrayAccess, \JsonSerializable
      */
     public function remember()
     {
-        if (Cookie::has(md5($this->guard).'-remember')) {
-            $token = Cookie::get(md5($this->guard).'-remember');
+        if ($this->cookie->has(md5($this->guard) . '-remember')) {
+            $token = $this->cookie->get(md5($this->guard) . '-remember');
             return $this->model[$this->guard]->find(['remember_token' => base64_decode($token)]);
         }
         return false;
@@ -265,11 +303,23 @@ class Authentication implements \ArrayAccess, \JsonSerializable
     public function setRemember(Model $user): self
     {
         if ($user->remember_token) {
-            Cookie::set(md5($this->guard).'-remember', base64_encode($user->remember_token), 3600 * 24 * 30);
+            $this->cookie->set(
+                md5($this->guard) . '-remember',
+                base64_encode($user->remember_token),
+                3600 * 24 * 30
+            );
         } else {
-            $token = hash_hmac('sha256', $user->email . $user->name, Config::get('app.key'));
+            $token = hash_hmac(
+                'sha256',
+                $user->email . $user->name,
+                $this->secret
+            );
 
-            Cookie::set(md5($this->guard).'-remember', base64_encode($token), 3600 * 24 * 30);
+            $this->cookie->set(
+                md5($this->guard) . '-remember',
+                base64_encode($token),
+                3600 * 24 * 30
+            );
 
             $user->remember_token = $token;
 
@@ -288,8 +338,8 @@ class Authentication implements \ArrayAccess, \JsonSerializable
 
     protected function setSession(Model $user)
     {
-        Session::set(md5($this->guard).'-id', $user->id);
-        Session::set(md5($this->guard).'-login', true);
+        $this->session->set(md5($this->guard) . '-id', $user->id);
+        $this->session->set(md5($this->guard) . '-login', true);
         return $this;
     }
 
@@ -298,13 +348,13 @@ class Authentication implements \ArrayAccess, \JsonSerializable
     {
         $this->user[$this->guard] = null;
         try {
-            Session::delete(md5($this->guard).'-id');
-            Session::delete(md5($this->guard).'-login');
-            if (Cookie::has(md5($this->guard).'-remember')) {
-                Cookie::forget(md5($this->guard).'-remember');
+            $this->session->delete(md5($this->guard) . '-id');
+            $this->session->delete(md5($this->guard) . '-login');
+            if ($this->cookie->has(md5($this->guard) . '-remember')) {
+                $this->cookie->forget(md5($this->guard) . '-remember');
             }
         } catch (Exception $e) {
-            Session::destroy();
+            $this->session->destroy();
         }
         return $this;
     }
@@ -336,7 +386,8 @@ class Authentication implements \ArrayAccess, \JsonSerializable
         return lang(
             'auth.many_attempts.text',
             array(
-                'time' => $this->convertTime($seconds))
+                'time' => $this->convertTime($seconds)
+            )
         );
     }
 
@@ -372,19 +423,13 @@ class Authentication implements \ArrayAccess, \JsonSerializable
 
     protected function setAttemptDriver(): void
     {
-        switch ($this->attemptDriverName[$this->guard]) {
-            case 'session':
-                $this->attemptDriver[$this->guard] = new Drivers\SessionAttemptDriver($this->guard);
-                break;
-            case 'database':
-                $this->attemptDriver[$this->guard] = new Drivers\DatabaseAttemptDriver($this->guard);
-                break;
-            case 'redis':
-                $this->attemptDriver[$this->guard] = new Drivers\RedisAttemptDriver($this->guard);
-                break;
-            default:
-                throw new RuntimeException('Attempt Driver not found !');
-                break;
+        if (array_key_exists($this->attemptDriverName, $this->attemptDrivers)) {
+            $this->attemptDriver[$this->guard] = $this->app->make(
+                $this->attemptDrivers[$this->attemptDriverName],
+                $this->guard
+            );
+        } else {
+            throw new RuntimeException('Attempt Driver not found !');
         }
     }
 
