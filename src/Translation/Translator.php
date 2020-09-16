@@ -112,18 +112,26 @@ class Translator implements ArrayAccess
      * @param string|null $locale
      * @return string
      */
-    public function locale(string $locale = null): string
+    public function getLocale(): string
     {
-        if ($locale !== null) {
-            $this->app->get('session')->set('_LOCALE', $locale);
-
-            $this->locale = $locale;
-
-            return $locale;
-        }
-
         return $this->locale;
     }
+
+    /**
+     * @param string|null $locale
+     * @return Translator
+     */
+    public function setLocale(string $locale = null)
+    {
+        $this->app->get('session')->set('_LOCALE', $locale);
+
+        $this->locale = $locale;
+
+        return $this;
+    }
+
+
+
 
 
     /**

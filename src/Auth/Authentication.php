@@ -19,6 +19,7 @@ use TT\Cookie;
 use TT\Engine\App;
 use TT\Hash;
 use TT\Session\Session;
+use Carbon\CarbonInterval;
 
 class Authentication implements \ArrayAccess, \JsonSerializable
 {
@@ -148,25 +149,37 @@ class Authentication implements \ArrayAccess, \JsonSerializable
     }
 
 
+
+    /**
+     * @param Model $user
+     * @return self
+     */
+    public function login(Model $user)
+    {
+        $this->session->set(md5($this->guard) . '-id', $user->getAttribute($user->getPrimaryKey()));
+        $this->session->set(md5($this->guard) . '-login', true);
+
+        $this->user[$this->guard] = $user;
+
+        return $this;
+    }
+
     /**
      * @param Model $user
      * @param string $guard
      * @return object
      */
-    public function user(Model $user = null, $guard = null)
+    public function user($guard = null)
     {
         $guard = $guard ?? $this->guard;
 
-        if ($user !== null) {
-            $this->user[$guard] = $user;
-        }
-        if (!$this->user[$guard]) {
-            if ($authId = $this->session->get(md5($guard) . '-id')) {
-                $user = $this->model[$guard]->find($authId);
-                $this->user[$guard] = $user;
+        if (!isset($this->user[$guard])) {
+            if ($id = $this->session->get(md5($guard) . '-id')) {
+                $this->user[$guard] = $this->model[$guard]->find($id);
             }
         }
-        return $this->user[$guard];
+
+        return $this->user[$guard] ?? null;
     }
 
 
@@ -186,6 +199,7 @@ class Authentication implements \ArrayAccess, \JsonSerializable
     public function attempt(array $credentials, $remember = false, $once = false): bool
     {
         if ($this->throttle[$this->guard]) {
+
             $this->setAttemptDriver();
             if (
                 ($attempts = $this->attemptDriver[$this->guard]->getAttemptsCountOrFail()) &&
@@ -248,16 +262,13 @@ class Authentication implements \ArrayAccess, \JsonSerializable
      */
     public function check(): bool
     {
-        if ($this->user[$this->guard] instanceof  Model) {
+        if (isset($this->user[$this->guard]) && $this->user[$this->guard] instanceof  Model) {
             return true;
         }
 
         if ($this->session->get(md5($this->guard) . '-login') === true) {
-            if ($this->user()) {
-                $authId = $this->session->get(md5($this->guard) . '-id');
-                if ($authId && $this->user[$this->guard]->id === $authId) {
-                    return true;
-                }
+            if ($this->user() && ($id = $this->session->get(md5($this->guard) . '-id'))) {
+                return $id && $this->user[$this->guard]->id === $id;
             }
             return false;
         }
@@ -344,9 +355,10 @@ class Authentication implements \ArrayAccess, \JsonSerializable
     }
 
 
-    public function logoutUser()
+    public function logout()
     {
         $this->user[$this->guard] = null;
+
         try {
             $this->session->delete(md5($this->guard) . '-id');
             $this->session->delete(md5($this->guard) . '-login');
@@ -383,44 +395,16 @@ class Authentication implements \ArrayAccess, \JsonSerializable
      */
     protected function getLockMessage($seconds)
     {
-        return lang(
-            'auth.many_attempts.text',
-            array(
-                'time' => $this->convertTime($seconds)
-            )
-        );
-    }
+        CarbonInterval::setLocale(lang()->getLocale());
 
+        return lang('auth.many_attempts.text', [
+            'time' => CarbonInterval::seconds($seconds)->cascade()->forHumans()
+        ]);
+    }
 
     /**
-     * @param $seconds
-     * @return string
-     * @throws Exception
+     * @return void
      */
-    protected function convertTime($seconds): string
-    {
-        $minute = '';
-
-        $second = '';
-
-        if ($seconds >= 60) {
-            $m = (int) ($seconds / 60);
-
-            $minute .= sprintf("$m %s", lang('auth.many_attempts.minute' . ($m > 1 ? 's' : ''))) . ' ';
-
-            if ($seconds % 60 > 0) {
-                $s = ($seconds % 60);
-
-                $second .= sprintf("$s %s", lang('auth.many_attempts.second' . ($s > 1 ? 's' : ''))) . ' ';
-            }
-        } else {
-            $second .= sprintf("$seconds %s", lang('auth.many_attempts.second' . ($seconds > 1 ? 's' : ''))) . ' ';
-        }
-
-        return $minute . $second;
-    }
-
-
     protected function setAttemptDriver(): void
     {
         if (array_key_exists($this->attemptDriverName, $this->attemptDrivers)) {
@@ -436,7 +420,7 @@ class Authentication implements \ArrayAccess, \JsonSerializable
 
     public function __get($key)
     {
-        return $this->user[$this->guard][$key];
+        return $this->user[$this->guard][$key] ?? null;
     }
 
 
