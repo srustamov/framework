@@ -38,8 +38,8 @@ class App implements ArrayAccess
         'storage' => 'storage',
         'lang' => 'lang',
         'configs' => 'configs',
-        'envFile' => '.config',
-        'envCacheFile' => 'storage/system/config',
+        'envFile' => '.env',
+        'envCacheFile' => 'storage/system/env',
         'configsCacheFile' => 'storage/system/configs.php',
         'routesCacheFile' => 'storage/system/routes.php',
     ];

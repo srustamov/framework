@@ -125,6 +125,16 @@ class HasMany extends Relation
      */
     public function __call($name, $arguments)
     {
+        if ($name == 'get' || $name == 'first') {
+            if ($this->values === null) {
+                $result = $this->model->where($this->key, $this->abstract[$this->foreignKey]);
+            } else {
+                $result = $this->model->whereIn($this->key, $this->values);
+            }
+
+            return $result->{$name}(...$arguments);
+        }
+
         $this->model = $this->model->{$name}(...$arguments);
 
         return $this;

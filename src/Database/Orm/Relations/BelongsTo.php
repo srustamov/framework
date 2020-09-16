@@ -39,7 +39,6 @@ class BelongsTo extends Relation
         $this->foreignKey = $key;
 
         $this->abstract = $abstract;
-
     }
 
     /**
@@ -95,11 +94,11 @@ class BelongsTo extends Relation
      * @param string $attribute_name
      * @return mixed
      */
-    public function getResult($result,string $attribute_name)
+    public function getResult($result, string $attribute_name)
     {
         $this->setKeyValues(
             array_values(array_unique(
-                array_column((array) $result,$this->foreignKey)
+                array_column((array) $result, $this->foreignKey)
             ))
         );
         $key = $this->getKey();
@@ -115,11 +114,11 @@ class BelongsTo extends Relation
                         break;
                     }
                 }
-                $item->setAttribute($attribute_name,$column_value);
+                $item->setAttribute($attribute_name, $column_value);
                 $column_value = null;
             }
         } else {
-            $result->setAttribute($attribute_name,$eager_result);
+            $result->setAttribute($attribute_name, $eager_result);
         }
 
         return $result;
@@ -133,6 +132,17 @@ class BelongsTo extends Relation
      */
     public function __call($name, $arguments)
     {
+        if ($name == 'get' || $name == 'first') {
+
+            if ($this->values === null) {
+                $this->values = $this->abstract[$this->getForeignKey()];
+            }
+
+            return $this->model
+                ->whereIn($this->getForeignKey(), (array) $this->values)
+                ->{$name}(...$arguments);
+        }
+
         $this->model = $this->model->{$name}(...$arguments);
 
         return $this;
@@ -144,11 +154,9 @@ class BelongsTo extends Relation
      */
     public function __get($name)
     {
-        if($this->result === false) {
+        if ($this->result === false) {
             $this->result = $this->model->first();
         }
         return $this->result->{$name} ?? null;
     }
-
-
 }
