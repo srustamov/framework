@@ -166,10 +166,10 @@ class Authentication implements \ArrayAccess, \JsonSerializable
 
     /**
      * @param Model $user
-     * @param string $guard
+     * @param string|null $guard
      * @return object
      */
-    public function user($guard = null)
+    public function user(string $guard = null)
     {
         $guard = $guard ?? $this->guard;
 
@@ -196,7 +196,7 @@ class Authentication implements \ArrayAccess, \JsonSerializable
      * @return bool
      * @throws Exception
      */
-    public function attempt(array $credentials, $remember = false, $once = false): bool
+    public function attempt(array $credentials, bool $remember = false, bool $once = false): bool
     {
         if ($this->throttle[$this->guard]) {
 

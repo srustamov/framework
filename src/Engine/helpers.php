@@ -9,6 +9,7 @@
 
 
 use TT\Engine\App;
+use TT\Engine\Http\Response;
 
 function app(string $class = null)
 {
@@ -48,7 +49,7 @@ if (!function_exists('getAllHeaders')) {
  * @return mixed
  * @throws Exception
  */
-function config(String $name = null, $default = null)
+function config(string $name = null, $default = null)
 {
     if ($name === null) {
         return App::get('config');
@@ -69,7 +70,7 @@ function setting($key, $default = null)
  * @return mixed
  * @throws Exception
  */
-function import(String $file, $once = true)
+function import(string $file, $once = true)
 {
     return App::get('file')->import($file, $once);
 }
@@ -95,11 +96,11 @@ function importFiles($directory, $once = true)
  */
 function bcrypt($value, $hash = null)
 {
-    if($hash === null) {
+    if ($hash === null) {
         return App::get('hash')->make($value);
     }
 
-    return App::get('hash')->check($value,$hash);
+    return App::get('hash')->check($value, $hash);
 }
 
 /**
@@ -164,27 +165,41 @@ function __($word = null, $replace = [])
 
 /**
  * @param Int $http_code
- * @param null $message
+ * @param string|object|null $exception
  * @param array $headers
+ * @throws ReflectionException
  * @throws Exception
  */
-function abort(Int $http_code, $message = null, $headers = [])
+function abort(int $http_code, string|object $exception = null, array $headers = [])
 {
+    $message = is_string($exception) ? $exception : $exception->getMessage();
+
     $file = app_path('Views/errors/' . $http_code);
 
-    if (file_exists($file.'.blade.php')) {
+    if (file_exists($file . '.blade.php')) {
         $content = view('errors.' . $http_code);
-    } else if (file_exists($file.'.php')) {
+    } else if (file_exists($file . '.php')) {
         ob_start();
-        import($file.'.php');
+        import($file . '.php');
         $content = ob_get_clean();
-    } else if(file_exists($file.'.html')) {
-        $content = file_get_contents($file.'.html');
+    } else if (file_exists($file . '.html')) {
+        $content = file_get_contents($file . '.html');
     } else {
-        $content = null;
+        if (is_string($exception)) {
+            $content = ['message' => $message];
+        } else {
+            $content = [
+                'message' => $message,
+                'file'    => $exception->getFile(),
+                'line'    => $exception->getLine(),
+                'code'    => $exception->getCode(),
+                'trace'   => $exception->getTrace(),
+            ];
+        }
+
     }
 
-    $response = App::get('response')->setStatusCode($http_code, $message);
+    $response = App::get('response')->setStatusCode($http_code);
 
     $response->withHeaders($headers);
 
@@ -199,7 +214,7 @@ function abort(Int $http_code, $message = null, $headers = [])
 /**
  * @return bool
  */
-function inConsole()
+function inConsole(): bool
 {
     return CONSOLE;
 }
@@ -209,7 +224,7 @@ function inConsole()
  * @return String
  * @throws Exception
  */
-function csrf_token(): String
+function csrf_token(): string
 {
     static $token;
 
@@ -221,7 +236,10 @@ function csrf_token(): String
 }
 
 
-function csrf_field(): String
+/**
+ * @throws Exception
+ */
+function csrf_field(): string
 {
     return '<input type="hidden" name="_token" value="' . csrf_token() . '" />';
 }
@@ -245,7 +263,7 @@ if (!function_exists('flash')) {
      * @return mixed
      * @throws Exception
      */
-    function flash(string $key)
+    function flash(string $key): mixed
     {
         return App::get('session')->flash($key);
     }
@@ -257,7 +275,7 @@ if (!function_exists('is_base64')) {
      * @param string $string
      * @return bool
      */
-    function is_base64(string $string): Bool
+    function is_base64(string $string): bool
     {
         return base64_encode(base64_decode($string)) === $string;
     }
@@ -269,7 +287,7 @@ if (!function_exists('response')) {
      * @return mixed
      * @throws Exception
      */
-    function response()
+    function response(): Response
     {
         return App::get('response', ...func_get_args());
     }
@@ -297,7 +315,7 @@ if (!function_exists('report')) {
      * @return mixed
      * @throws Exception
      */
-    function report(String $subject, String $message, $destination = null)
+    function report(string $subject, string $message, $destination = null)
     {
         if (empty($destination)) {
             $destination = str_replace(' ', '-', $subject);
@@ -412,7 +430,7 @@ if (!function_exists('view')) {
      * @return mixed
      * @throws Exception
      */
-    function view(String $file, $data = [], $cache = false)
+    function view(string $file, $data = [], $cache = false)
     {
         return App::get('view')->render($file, $data, $cache);
     }
@@ -535,7 +553,7 @@ if (!function_exists('fullTrim')) {
      * @param string $char
      * @return String
      */
-    function fullTrim($str, $char = ' '): String
+    function fullTrim($str, $char = ' '): string
     {
         return str_replace($char, '', $str);
     }
@@ -547,7 +565,7 @@ if (!function_exists('encode_php_tag')) {
      * @param $str
      * @return String
      */
-    function encode_php_tag($str): String
+    function encode_php_tag($str): string
     {
         return str_replace(array('<?', '?>'), array('&lt;?', '?&gt;'), $str);
     }
@@ -561,7 +579,7 @@ if (!function_exists('preg_replace_array')) {
      * @param $subject
      * @return String
      */
-    function preg_replace_array($pattern, array $replacements, $subject): String
+    function preg_replace_array($pattern, array $replacements, $subject): string
     {
         /**
          * @return mixed
@@ -582,7 +600,7 @@ if (!function_exists('str_replace_first')) {
      * @param $subject
      * @return String
      */
-    function str_replace_first($search, $replace, $subject): String
+    function str_replace_first($search, $replace, $subject): string
     {
         return App::get('str')->replace_first($search, $replace, $subject);
     }
@@ -596,7 +614,7 @@ if (!function_exists('str_replace_last')) {
      * @param $subject
      * @return String
      */
-    function str_replace_last($search, $replace, $subject): String
+    function str_replace_last($search, $replace, $subject): string
     {
         return App::get('str')->replace_last($search, $replace, $subject);
     }
@@ -609,7 +627,7 @@ if (!function_exists('str_slug')) {
      * @param string $separator
      * @return String
      */
-    function str_slug($str, $separator = '-'): String
+    function str_slug($str, $separator = '-'): string
     {
         return App::get('str')->slug($str, $separator);
     }
@@ -623,7 +641,7 @@ if (!function_exists('str_limit')) {
      * @param string $end
      * @return String
      */
-    function str_limit($str, $limit = 100, $end = '...'): String
+    function str_limit($str, $limit = 100, $end = '...'): string
     {
         return App::get('str')->limit($str, $limit, $end);
     }
@@ -636,7 +654,7 @@ if (!function_exists('upper')) {
      * @param string $encoding
      * @return String
      */
-    function upper(String $str, $encoding = 'UTF-8'): String
+    function upper(string $str, $encoding = 'UTF-8'): string
     {
         return mb_strtoupper($str, $encoding);
     }
@@ -649,7 +667,7 @@ if (!function_exists('lower')) {
      * @param string $encoding
      * @return String
      */
-    function lower(String $str, $encoding = 'UTF-8'): String
+    function lower(string $str, $encoding = 'UTF-8'): string
     {
         return mb_strtolower($str, $encoding);
     }
@@ -662,7 +680,7 @@ if (!function_exists('title')) {
      * @param string $encoding
      * @return string
      */
-    function title(String $str, $encoding = 'UTF-8'): String
+    function title(string $str, $encoding = 'UTF-8'): string
     {
         return mb_convert_case($str, MB_CASE_TITLE, $encoding);
     }
@@ -697,7 +715,7 @@ if (!function_exists('str_replace_array')) {
      * @param $subject
      * @return String
      */
-    function str_replace_array($search, array $replace, $subject): String
+    function str_replace_array($search, array $replace, $subject): string
     {
         return App::get('str')->replace_array($search, $replace, $subject);
     }
@@ -726,7 +744,7 @@ if (!function_exists('current_url')) {
      * @param string $url
      * @return String
      */
-    function current_url($url = ''): String
+    function current_url($url = ''): string
     {
         return App::get('url')->current($url);
     }
@@ -738,7 +756,7 @@ if (!function_exists('clean_url')) {
      * @param $url
      * @return String
      */
-    function clean_url($url): String
+    function clean_url($url): string
     {
         if ($url === '') {
             return '';
@@ -768,7 +786,7 @@ if (!function_exists('segment')) {
      * @return mixed
      * @throws Exception
      */
-    function segment(Int $number)
+    function segment(int $number)
     {
         return App::get('url')->segment($number);
     }
@@ -801,7 +819,7 @@ if (!function_exists('is_mail')) {
      * @return mixed
      * @throws Exception
      */
-    function is_mail(String $mail)
+    function is_mail(string $mail)
     {
         return App::get('validator')->is_mail($mail);
     }
@@ -813,7 +831,7 @@ if (!function_exists('is_url')) {
      * @param String $url
      * @return mixed
      */
-    function is_url(String $url)
+    function is_url(string $url)
     {
         return App::get('validator')->is_url($url);
     }
@@ -838,7 +856,7 @@ if (!function_exists('css')) {
      * @param bool $modifiedTime
      * @return String
      */
-    function css($file, $modifiedTime = false): String
+    function css($file, $modifiedTime = false): string
     {
         return App::get('html')->css($file, $modifiedTime);
     }
@@ -851,7 +869,7 @@ if (!function_exists('js')) {
      * @param bool $modifiedTime
      * @return String
      */
-    function js($file, $modifiedTime = false): String
+    function js($file, $modifiedTime = false): string
     {
         return App::get('html')->js($file, $modifiedTime);
     }
@@ -864,7 +882,7 @@ if (!function_exists('img')) {
      * @param array $attributes
      * @return String
      */
-    function img($file, $attributes = []): String
+    function img($file, $attributes = []): string
     {
         return App::get('html')->img($file, $attributes);
     }

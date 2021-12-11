@@ -1,10 +1,13 @@
 <?php namespace TT\Engine;
 
+use ReflectionException;
 use TT\Exceptions\TTException;
+use Whoops\Handler\PrettyPageHandler;
+use Whoops\Run;
 
 class RegisterExceptionHandler
 {
-    private $app;
+    private App $app;
 
     /**
      * RegisterExceptionHandler constructor.
@@ -17,18 +20,10 @@ class RegisterExceptionHandler
 
     public function handle(): void
     {
-        $isDev = $this->app->get('config')->get('app.debug');
-
-        if (!CONSOLE && $isDev) {
-            $whoops = new \Whoops\Run;
-
-            $whoops->pushHandler(new \Whoops\Handler\PrettyPageHandler);
-
-            $whoops->register();
+        if (!$this->app->runningConsole() && $this->app->isDebug()) {
+            (new Run)->pushHandler(new PrettyPageHandler)->register();
         } else {
-            $exception = new TTException;
-
-            $exception->register();
+            (new TTException)->register($this->app);
         }
     }
 }

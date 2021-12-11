@@ -2,7 +2,7 @@
 
 class PrepareConfigurations
 {
-    private $app;
+    private App $app;
 
     public function __construct(App $app)
     {
@@ -13,7 +13,7 @@ class PrepareConfigurations
     {
         $configurations = [];
 
-        $cache_file = (string)$this->app->configsCacheFile();
+        $cache_file = $this->app->configsCacheFile();
 
         if (file_exists($cache_file)) {
             $configurations = require $cache_file;

@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection ALL */
 
 namespace TT\Engine;
 
@@ -12,90 +12,76 @@ namespace TT\Engine;
 use ArrayAccess;
 use Closure;
 use Exception;
+use JetBrains\PhpStorm\NoReturn;
 use ReflectionException;
 use RuntimeException;
+use TT\Engine\Http\Pipeline\Pipeline;
 use TT\Engine\Http\Request;
 use TT\Engine\Http\Response;
-use TT\Engine\Http\Pipeline\Pipeline;
 
 class App implements ArrayAccess
 {
-    public const VERSION = '1.5';
-
-    public static $classes = [];
-
-    protected static $instance;
-
-    protected $routeMiddleware = [];
-
-    protected $middleware = [];
-
-    private $boot = false;
-
-    public $paths = [
-        'base' => '',
-        'public' => 'public',
-        'storage' => 'storage',
-        'lang' => 'lang',
-        'configs' => 'configs',
-        'envFile' => '.env',
-        'envCacheFile' => 'storage/system/env',
-        'configsCacheFile' => 'storage/system/configs.php',
-        'routesCacheFile' => 'storage/system/routes.php',
-    ];
-
+    public const VERSION = '2.0';
     public const MAP = [
-        'app' => 'TT\Engine\App',
-        'array' => 'TT\Arr',
+        'app'            => 'TT\Engine\App',
+        'config'         => 'TT\Engine\Config',
+        'array'          => 'TT\Arr',
         'authentication' => 'TT\Auth\Authentication',
-        'cache' => 'TT\Cache\Cache',
-        'console' => 'TT\Engine\Cli\Console',
-        'cookie' => 'TT\Cookie',
-        'database' => 'TT\Database\Builder',
-        'email' => 'TT\Mail\Email',
-        'file' => 'TT\File',
-        'hash' => 'TT\Hash',
-        'html' => 'TT\Html',
-        'http' => 'TT\Http',
-        'input' => 'TT\Input',
-        'translator' => 'TT\Translation\Translator',
-        'middleware' => 'TT\Engine\Http\Middleware',
-        'openssl' => 'TT\Encryption\OpenSsl',
-        'jwt' => 'TT\Auth\Jwt',
-        'redirect' => 'TT\Redirect',
-        'redis' => 'TT\Redis',
-        'request' => 'TT\Engine\Http\Request',
-        'response' => 'TT\Engine\Http\Response',
-        'route' => 'TT\Engine\Http\Routing\Router',
-        'session' => 'TT\Session\Session',
-        'str' => 'TT\Str',
-        'string' => 'TT\Str',
-        'storage' => 'TT\Storage',
-        'url' => 'TT\Uri',
-        'validator' => 'TT\Validator',
-        'view' => 'TT\View\View',
+        'cache'          => 'TT\Cache\Cache',
+        'console'        => 'TT\Engine\Cli\Console',
+        'cookie'         => 'TT\Cookie',
+        'database'       => 'TT\Database\Builder',
+        'email'          => 'TT\Mail\Email',
+        'file'           => 'TT\File',
+        'hash'           => 'TT\Hash',
+        'html'           => 'TT\Html',
+        'http'           => 'TT\Http',
+        'input'          => 'TT\Input',
+        'translator'     => 'TT\Translation\Translator',
+        'middleware'     => 'TT\Engine\Http\Middleware',
+        'openssl'        => 'TT\Encryption\OpenSsl',
+        'jwt'            => 'TT\Auth\Jwt',
+        'redirect'       => 'TT\Redirect',
+        'redis'          => 'TT\Redis',
+        'request'        => 'TT\Engine\Http\Request',
+        'response'       => 'TT\Engine\Http\Response',
+        'route'          => 'TT\Engine\Http\Routing\Router',
+        'session'        => 'TT\Session\Session',
+        'str'            => 'TT\Str',
+        'string'         => 'TT\Str',
+        'storage'        => 'TT\Storage',
+        'url'            => 'TT\Uri',
+        'validator'      => 'TT\Validator',
+        'view'           => 'TT\View\View',
     ];
-
+    public static array $classes = [];
+    protected static ?self $instance = null;
+    public array $paths = [
+        'base'             => '',
+        'public'           => 'public',
+        'storage'          => 'storage',
+        'lang'             => 'lang',
+        'configs'          => 'configs',
+        'envFile'          => '.env',
+        'envCacheFile'     => 'storage/system/env',
+        'configsCacheFile' => 'storage/system/configs.php',
+        'routesCacheFile'  => 'storage/system/routes.php',
+    ];
+    protected array $routeMiddleware = [];
+    protected array $middleware = [];
+    private bool $boot = false;
 
     /**
      * App constructor.
      * Set application base path
      *
-     * @param string $basePath
+     * @param string|null $basePath
      */
-    public function __construct(string $basePath = null)
+    public function __construct(?string $basePath = null)
     {
         define('DS', DIRECTORY_SEPARATOR);
 
         $this->prepare($basePath);
-    }
-
-    /**
-     * @return string
-     */
-    public function version(): string
-    {
-        return static::VERSION;
     }
 
     /**
@@ -122,249 +108,16 @@ class App implements ArrayAccess
     }
 
     /**
-     * Application bootstrapping
-     *
-     * @return $this
+     * @param $object
+     * @param $className
+     * @return bool
      * @throws Exception
      */
-    public function bootstrap(): self
+    public static function isInstance($object, $className): bool
     {
-        if (!$this->isBoot()) {
-            $this->setPublicPath();
+        $instance = self::get($className);
 
-            $this->singleton('request', new Request($this));
-
-            $this->callImportantClasses();
-
-            $this->setAliases();
-
-            $this->callMiddleware($this->middleware);
-
-            $this->setLocale();
-
-            $this->boot = true;
-
-            $this->afterBootstrap();
-        }
-
-        return $this;
-    }
-
-
-    protected function afterBootstrap(): void
-    {
-        //
-    }
-
-
-    public function isBoot(): bool
-    {
-        return $this->boot;
-    }
-
-    protected function callImportantClasses(): void
-    {
-        (new LoadEnvironmentVariables($this))->handle();
-        (new PrepareConfigurations($this))->handle();
-        (new RegisterExceptionHandler($this))->handle();
-    }
-
-
-    /**
-     * @param $middleware
-     * @throws ReflectionException
-     */
-    public function callMiddleware($middleware): void
-    {
-        (new Pipeline($this))
-            ->send(self::get('request'))
-            ->pipe($middleware)
-            ->then(function ($request) {
-                $this['request'] = $request;
-            });
-    }
-
-    /**
-     *  Application aliases setting
-     * @throws ReflectionException
-     */
-    protected function setAliases(): void
-    {
-        $aliases = self::get('config')->get('aliases', []);
-
-        $aliases['App'] = get_class($this);
-
-        foreach ($aliases as $key => $value) {
-            class_alias('\\' . $value, $key);
-        }
-    }
-
-    /**
-     * Set application locale and timezone
-     *
-     * @return void
-     * @throws ReflectionException
-     */
-    protected function setLocale(): void
-    {
-        $config = self::get('config');
-
-        setlocale(LC_ALL, $config->get('datetime.setLocale'));
-
-        date_default_timezone_set($config->get('datetime.time_zone', 'UTC'));
-    }
-
-
-    /**
-     * Application Routing
-     *
-     * @return Response
-     * @throws Exception
-     */
-    public function routing(): Response
-    {
-        /**@var $router Http\Routing\Router */
-        $router = self::get('route');
-
-        $router->setMiddlewareAliases($this->routeMiddleware);
-
-        if (file_exists($file = $this->routesCacheFile())) {
-            $router->setRoutes(require $file);
-        } else {
-            $router->importRouteFiles(
-                glob($this->path('routes') . '/*.php')
-            );
-        }
-        return CONSOLE ? self::get('response') : $router->run();
-    }
-
-    /**
-     * Create application public path
-     *
-     * @param String|null $path
-     */
-    public function setPublicPath(String $path = null): void
-    {
-        if ($path !== null) {
-            $this->paths['public'] = $path;
-        } elseif (
-            isset($_SERVER['SCRIPT_FILENAME']) &&
-            !empty($_SERVER['SCRIPT_FILENAME']) &&
-            !CONSOLE
-        ) {
-            $parts = explode('/', $_SERVER['SCRIPT_FILENAME']);
-            array_pop($parts);
-
-            $this->paths['public'] = implode('/', $parts);
-        } else {
-            $this->paths['public'] = rtrim($this->paths['base'], DS)
-                . DS
-                . ltrim($this->paths['public'], DS);
-        }
-    }
-
-    /**
-     * @return string
-     */
-    public function envFile(): string
-    {
-        return $this->path($this->paths['envFile']);
-    }
-
-    /**
-     * @param string $path
-     * @return string
-     */
-    public function publicPath($path = ''): string
-    {
-        return $this->paths['public'] . DS . ltrim($path, DS);
-    }
-
-    /**
-     * @param string $path
-     * @return string
-     */
-    public function path($path = ''): string
-    {
-        return $this->paths['base'] . DS . ltrim($path, DS);
-    }
-
-    /**
-     * @param string $path
-     * @return string
-     */
-    public function storagePath($path = ''): string
-    {
-        return $this->path($this->paths['storage'] . DS . ltrim($path, DS));
-    }
-
-    /**
-     * @param string $path
-     * @return string
-     */
-    public function configsPath($path = ''): string
-    {
-        return $this->path($this->paths['configs'] . DS . ltrim($path, DS));
-    }
-
-    /**
-     * @param string $path
-     * @return string
-     */
-    public function appPath($path = ''): string
-    {
-        return $this->paths['base'] . DS . 'app' . DS . ltrim($path, DS);
-    }
-
-    /**
-     * @param string $path
-     * @return string
-     */
-    public function langPath($path = ''): string
-    {
-        return $this->path($this->paths['lang'] . DS . ltrim($path, DS));
-    }
-
-    /**
-     * @return string
-     */
-    public function configsCacheFile(): string
-    {
-        return $this->path($this->paths['configsCacheFile']);
-    }
-
-    /**
-     * @return string
-     */
-    public function routesCacheFile(): string
-    {
-        return $this->path($this->paths['routesCacheFile']);
-    }
-
-    /**
-     * @return string
-     */
-    public function envCacheFile(): string
-    {
-        return $this->path($this->paths['envCacheFile']);
-    }
-
-    /**
-     * @param String|null $name
-     * @param bool $isValue
-     * @return array|bool|false|int|mixed|string
-     */
-    public static function map(String $name = null, Bool $isValue = false)
-    {
-        if ($name === null) {
-            return self::MAP;
-        }
-
-        if (!$isValue) {
-            return self::MAP[strtolower($name)] ?? false;
-        }
-
-        return array_search($name, self::MAP, true);
+        return ($object instanceof $instance);
     }
 
     /**
@@ -404,6 +157,110 @@ class App implements ArrayAccess
     }
 
     /**
+     * @param String|null $name
+     * @param bool $isValue
+     * @return array|bool|false|int|mixed|string
+     */
+    public static function map(string $name = null, bool $isValue = false)
+    {
+        if ($name === null) {
+            return self::MAP;
+        }
+
+        if (!$isValue) {
+            return self::MAP[strtolower($name)] ?? false;
+        }
+
+        return array_search($name, self::MAP, true);
+    }
+
+    /**
+     * @return mixed
+     */
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
+
+    #[NoReturn]
+    public static function end(): void
+    {
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
+
+        exit(0);
+    }
+
+    /**
+     * @return string
+     */
+    public function version(): string
+    {
+        return static::VERSION;
+    }
+
+    /**
+     * Application bootstrapping
+     *
+     * @return $this
+     * @throws Exception
+     */
+    public function bootstrap(): self
+    {
+        if (!$this->isBoot()) {
+
+            $this->setPublicPath();
+
+            $this->singleton('request', new Request($this));
+
+            $this->callImportantClasses();
+
+            $this->setAliases();
+
+            $this->callMiddleware($this->middleware);
+
+            $this->setLocale();
+
+            $this->boot = true;
+
+            $this->afterBootstrap();
+        }
+
+        return $this;
+    }
+
+    public function isBoot(): bool
+    {
+        return $this->boot;
+    }
+
+    /**
+     * Create application public path
+     *
+     * @param String|null $path
+     */
+    public function setPublicPath(string $path = null): void
+    {
+        if ($path !== null) {
+            $this->paths['public'] = $path;
+        } elseif (
+            isset($_SERVER['SCRIPT_FILENAME']) &&
+            !empty($_SERVER['SCRIPT_FILENAME']) &&
+            !CONSOLE
+        ) {
+            $parts = explode('/', $_SERVER['SCRIPT_FILENAME']);
+            array_pop($parts);
+
+            $this->paths['public'] = implode('/', $parts);
+        } else {
+            $this->paths['public'] = rtrim($this->paths['base'], DS)
+                . DS
+                . ltrim($this->paths['public'], DS);
+        }
+    }
+
+    /**
      * @param $className
      * @param $object
      */
@@ -418,6 +275,186 @@ class App implements ArrayAccess
         }
     }
 
+    /**
+     * @throws ReflectionException
+     */
+    protected function callImportantClasses(): void
+    {
+        (new LoadEnvironmentVariables($this))->handle();
+        (new PrepareConfigurations($this))->handle();
+        (new RegisterExceptionHandler($this))->handle();
+    }
+
+    /**
+     *  Application aliases setting
+     * @throws ReflectionException
+     */
+    protected function setAliases(): void
+    {
+        $aliases = self::get('config')->get('aliases', []);
+
+        $aliases['App'] = get_class($this);
+
+        foreach ($aliases as $key => $value) {
+            class_alias('\\' . $value, $key);
+        }
+    }
+
+    /**
+     * @param $middleware
+     * @throws ReflectionException
+     */
+    public function callMiddleware($middleware): void
+    {
+        (new Pipeline($this))
+            ->send(self::get('request'))
+            ->pipe($middleware)
+            ->then(function ($request) {
+                $this['request'] = $request;
+            });
+    }
+
+    /**
+     * Set application locale and timezone
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    protected function setLocale(): void
+    {
+        $config = self::get('config');
+
+        setlocale(LC_ALL, $config->get('datetime.setLocale'));
+
+        date_default_timezone_set($config->get('datetime.time_zone', 'UTC'));
+    }
+
+    protected function afterBootstrap(): void
+    {
+        //
+    }
+
+    /**
+     * Application Routing
+     *
+     * @return Response
+     * @throws Exception
+     */
+    public function routing(): Response
+    {
+        /**@var $router Http\Routing\Router */
+        $router = self::get('route');
+
+        $router->setMiddlewareAliases($this->routeMiddleware);
+
+        if (file_exists($file = $this->routesCacheFile())) {
+            $router->setRoutes(require $file);
+        } else {
+            $router->importRouteFiles(
+                glob($this->path('routes') . '/*.php')
+            );
+        }
+
+        return CONSOLE ? self::get('response') : $router->run();
+    }
+
+    /**
+     * @return string
+     */
+    public function routesCacheFile(): string
+    {
+        return $this->path($this->paths['routesCacheFile']);
+    }
+
+    public static function runningConsole()
+    {
+        return PHP_SAPI === 'cli' || PHP_SAPI === 'phpdbg';
+    }
+
+    public static function isDebug()
+    {
+        return self::get('config')->get('app.debug');
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    public function path(string $path = ''): string
+    {
+        return $this->paths['base'] . DS . ltrim($path, DS);
+    }
+
+    /**
+     * @return string
+     */
+    public function envFile(): string
+    {
+        return $this->path($this->paths['envFile']);
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     * @noinspection PhpUnused
+     */
+    public function publicPath(string $path = ''): string
+    {
+        return $this->paths['public'] . DS . ltrim($path, DS);
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     * @noinspection PhpUnused
+     */
+    public function storagePath(string $path = ''): string
+    {
+        return $this->path($this->paths['storage'] . DS . ltrim($path, DS));
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    public function configsPath(string $path = ''): string
+    {
+        return $this->path($this->paths['configs'] . DS . ltrim($path, DS));
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    public function appPath(string $path = ''): string
+    {
+        return $this->paths['base'] . DS . 'app' . DS . ltrim($path, DS);
+    }
+
+    /**
+     * @param string $path
+     * @return string
+     */
+    public function langPath(string $path = ''): string
+    {
+        return $this->path($this->paths['lang'] . DS . ltrim($path, DS));
+    }
+
+    /**
+     * @return string
+     */
+    public function configsCacheFile(): string
+    {
+        return $this->path($this->paths['configsCacheFile']);
+    }
+
+    /**
+     * @return string
+     */
+    public function envCacheFile(): string
+    {
+        return $this->path($this->paths['envCacheFile']);
+    }
 
     public function make($className, ...$args)
     {
@@ -426,45 +463,12 @@ class App implements ArrayAccess
         }
         return new $className(
             ...Reflections::methodParameters(
-                $className,
-                '__construct',
-                $args
-            )
+            $className,
+            '__construct',
+            $args
+        )
         );
     }
-
-
-    /**
-     * @param $object
-     * @param $className
-     * @return bool
-     * @throws Exception
-     */
-    public static function isInstance($object, $className): bool
-    {
-        $instance = self::get($className);
-
-        return ($object instanceof $instance);
-    }
-
-    /**
-     * @return mixed
-     */
-    public static function getInstance()
-    {
-        return self::$instance;
-    }
-
-
-    public static function end(): void
-    {
-        if (function_exists('fastcgi_finish_request')) {
-            fastcgi_finish_request();
-        }
-
-        exit(0);
-    }
-
 
     /**
      * Offset to retrieve
@@ -476,7 +480,7 @@ class App implements ArrayAccess
      * @since 5.0.0
      * @throws Exception
      */
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return self::get($offset);
     }
@@ -493,7 +497,7 @@ class App implements ArrayAccess
      * @return void
      * @since 5.0.0
      */
-    public function offsetSet($offset, $value): void
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         $this->singleton($offset, $value);
     }
@@ -507,7 +511,7 @@ class App implements ArrayAccess
      * @return void
      * @since 5.0.0
      */
-    public function offsetUnset($offset): void
+    public function offsetUnset(mixed $offset): void
     {
         if (isset(self::$classes[$offset])) {
             unset(self::$classes[$offset]);
@@ -526,7 +530,7 @@ class App implements ArrayAccess
      * The return value will be casted to boolean if non-boolean was returned.
      * @since 5.0.0
      */
-    public function offsetExists($offset): bool
+    public function offsetExists(mixed $offset): bool
     {
         return array_key_exists($offset, self::$classes);
     }

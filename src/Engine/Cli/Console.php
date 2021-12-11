@@ -1,11 +1,13 @@
 <?php namespace TT\Engine\Cli;
 
 use Symfony\Component\Console\Application;
-use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 class Console
 {
-    protected static $commands = [
+    protected static array $commands = [
         Commands\Create\Middleware::class,
         Commands\Create\Model::class,
         Commands\Create\Controller::class,
@@ -23,11 +25,13 @@ class Console
         Commands\Development::class,
     ];
 
-    private static $instance;
+    private static Console $instance;
 
-    protected static $app;
+    protected static Application $app;
 
-    public static function setApplication(Application $app)
+    private static ?SymfonyStyle $writer = null;
+
+    public static function setApplication(Application $app): Console|static
     {
         self::$app = $app;
 
@@ -35,7 +39,7 @@ class Console
     }
 
 
-    public static function setCommand($commands)
+    public static function setCommand($commands): Console|static
     {
         $commands = is_array($commands) ? $commands : [$commands];
 
@@ -45,7 +49,10 @@ class Console
     }
 
 
-    public static function run()
+    /**
+     * @throws \Exception
+     */
+    public static function run(): int
     {
         $app = self::getApplication();
         
@@ -61,7 +68,7 @@ class Console
     }
 
 
-    public static function getApplication()
+    public static function getApplication(): Application
     {
         if (self::$app === null) {
             self::$app = new Application();
@@ -70,8 +77,32 @@ class Console
         return self::$app;
     }
 
+    public static function getWriter(): SymfonyStyle
+    {
+        if (!self::$writer) {
+            self::$writer = new SymfonyStyle(self::getInput(), self::getOutput());
+        }
+        return self::$writer;
+    }
 
-    public static function getInstance()
+
+    public static function write($message,$style = 'text')
+    {
+        self::getWriter()->$style($message);
+    }
+
+    private static function getInput(): ArgvInput
+    {
+        return new ArgvInput();
+    }
+
+    private static function getOutput(): ConsoleOutput
+    {
+        return new ConsoleOutput();
+    }
+
+
+    public static function getInstance(): Console|static
     {
         if (self::$instance === null) {
             self::$instance = new static;
@@ -79,4 +110,6 @@ class Console
 
         return self::$instance;
     }
+
+
 }

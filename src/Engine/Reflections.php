@@ -16,7 +16,7 @@ use RuntimeException;
 class Reflections
 {
 
-    private static $instance;
+    private static Reflections $instance;
 
 
     /**
@@ -33,8 +33,8 @@ class Reflections
         }
 
         foreach ($reflection->getParameters() as $num => $param) {
-            if ($param->getClass() && !$param->isDefaultValueAvailable()) {
-                array_splice($args, $num, 0,  [App::get($param->getClass()->name)]);                
+            if ($param->getType() && !$param->isDefaultValueAvailable()) {
+                array_splice($args, $num, 0,  [App::get($param->getType()->getName())]);
             }
         }
         return $args;
@@ -51,9 +51,10 @@ class Reflections
     {
         $reflection = self::getFunction($function);
 
+
         foreach ($reflection->getParameters() as $num => $param) {
-            if ($param->getClass() && !$param->isDefaultValueAvailable()) {
-                array_splice($args, $num, 0,  [App::get($param->getClass()->name)]);
+            if ($param->getType() && !$param->isDefaultValueAvailable()) {
+                array_splice($args, $num, 0,  [App::get($param->getType()->getName())]);
             }
         }
         return $args;
@@ -64,7 +65,6 @@ class Reflections
      * @param $class
      * @param string $method
      * @return ReflectionMethod|null
-     * @throws ReflectionException
      */
     public static function getMethod($class, string $method): ?ReflectionMethod
     {
@@ -73,10 +73,6 @@ class Reflections
         }
 
         return null;
-
-        //throw new RuntimeException(
-        //    sprintf('class [%s] or method [%s] not found',$class,$method)
-        //);
 
     }
 
@@ -93,7 +89,6 @@ class Reflections
     /**
      * @param string $className
      * @return ReflectionClass
-     * @throws ReflectionException
      */
     public static function getClass(string $className): ReflectionClass
     {

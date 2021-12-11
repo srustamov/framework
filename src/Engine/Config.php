@@ -1,4 +1,6 @@
-<?php namespace TT\Engine;
+<?php /** @noinspection DuplicatedCode */
+
+namespace TT\Engine;
 
 use ArrayAccess;
 use Countable;
@@ -12,7 +14,7 @@ use Countable;
 
 class Config implements ArrayAccess, Countable
 {
-    private $configurations;
+    private array $configurations;
 
 
     /**
@@ -30,7 +32,7 @@ class Config implements ArrayAccess, Countable
      */
     public function has($key): bool
     {
-        if (strpos($key, '.') !== false) {
+        if (str_contains($key, '.')) {
             $items_recursive = explode('.', $key);
 
             $config = $this->configurations;
@@ -60,11 +62,11 @@ class Config implements ArrayAccess, Countable
     /**
      * @param $extension
      * @param null $default
-     * @return mixed|null
+     * @return mixed
      */
-    public function get($extension, $default = null)
+    public function get($extension, $default = null): mixed
     {
-        if (strpos($extension, '.') !== false) {
+        if (str_contains($extension, '.')) {
             $item_recursive = explode('.', $extension);
 
             $config = $this->configurations;
@@ -99,7 +101,7 @@ class Config implements ArrayAccess, Countable
      */
     public function forget(String $key)
     {
-        if (strpos($key, '.') !== false) {
+        if (str_contains($key, '.')) {
             static::forgetRecursive($this->configurations, $key);
         } elseif ($this->has($key)) {
             unset($this->configurations[$key]);
@@ -148,12 +150,13 @@ class Config implements ArrayAccess, Countable
      * @param $configurations
      * @param $key
      * @param $value
-     * @return mixed
+     * @return void
      */
-    private static function setRecursive(&$configurations, $key, $value)
+    private static function setRecursive(&$configurations, $key, $value): void
     {
         if ($key === null) {
-            return $configurations = $value;
+            $configurations = $value;
+            return;
         }
 
         $keys = explode('.', $key);
@@ -173,9 +176,9 @@ class Config implements ArrayAccess, Countable
     /**
      * @param $configurations
      * @param $key
-     * @return bool
+     * @return void
      */
-    private static function forgetRecursive(&$configurations, $key): ?bool
+    private static function forgetRecursive(&$configurations, $key): void
     {
         $keys = explode('.', $key);
 
@@ -183,7 +186,7 @@ class Config implements ArrayAccess, Countable
             $key = array_shift($keys);
 
             if (! isset($configurations[$key]) || ! is_array($configurations[$key])) {
-                return true;
+                return;
             }
 
             $configurations = &$configurations[$key];
@@ -203,7 +206,7 @@ class Config implements ArrayAccess, Countable
      * @return mixed Can return all value types.
      * @since 5.0.0
      */
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->get($offset);
     }
@@ -220,7 +223,7 @@ class Config implements ArrayAccess, Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value)
     {
         $this->set($offset, $value);
     }
@@ -234,7 +237,7 @@ class Config implements ArrayAccess, Countable
      * @return void
      * @since 5.0.0
      */
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset)
     {
         $this->forget($offset);
     }
@@ -251,7 +254,7 @@ class Config implements ArrayAccess, Countable
      * The return value will be casted to boolean if non-boolean was returned.
      * @since 5.0.0
      */
-    public function offsetExists($offset): bool
+    public function offsetExists(mixed $offset): bool
     {
         return $this->has($offset);
     }

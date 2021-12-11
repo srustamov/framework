@@ -11,20 +11,20 @@
     }
   ],
   "require": {
-    "php": ">=7.2.5",
-    "windwalker/edge": "~3.0",
+    "php": ">=7.4|^8.0",
+    "windwalker/edge": "4.0.8",
     "predis/predis": "^1.1",
-    "filp/whoops": "^2.4",
-    "lcobucci/jwt": "^3.3",
-    "symfony/console": "^4.3",
-    "nesbot/carbon": "^2.40",
+    "filp/whoops": "^2.14.4",
+    "lcobucci/jwt": "^4.1.5",
+    "symfony/console": "^v6.0.0",
+    "nesbot/carbon": "^2.55.2",
     "ext-json": "*",
     "ext-pdo": "*",
     "ext-openssl": "*"
   },
   "require-dev": {
-    "symfony/var-dumper": "^4.3",
-    "phpunit/phpunit": "^9.0"
+    "symfony/var-dumper": "^v6.0.0",
+    "phpunit/phpunit": "^9.5.10"
   },
   "config": {
     "optimize-autoloader": true
