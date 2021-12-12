@@ -38,5 +38,7 @@ class Development extends Command
         $output->writeln(
             "\n<fg=green;options=bold>Application in development!</>\n"
         );
+
+        return 1;
     }
 }

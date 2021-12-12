@@ -37,18 +37,20 @@ class User extends Command
             App::get('database')->exec($this->getSql($table));
 
             $output->writeln("<fg=green>Create {$table} table successfully</>");
-        } catch (\PDOException $e) {
+        } catch (\PDOException|\ReflectionException $e) {
             if ($e->getCode() === '42S01') {
                 $output->writeln("<fg=red>{$table} table or view already exists</>");
             } else {
                 $output->writeln("<fg=red>{$e->getmessage()}</>");
             }
         }
+
+        return 1;
     }
 
 
 
-    protected function getSql(string $table)
+    protected function getSql(string $table): string
     {
         return sprintf('CREATE TABLE IF NOT EXISTS `%s` (
                         `id` int(11) NOT NULL AUTO_INCREMENT,

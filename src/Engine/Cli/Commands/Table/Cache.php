@@ -45,11 +45,13 @@ class Cache extends Command
                 $output->writeln("<fg=red>{$e->getmessage()}</>");
             }
         }
+
+        return 1;
     }
 
 
 
-    protected function getSql(string $table)
+    protected function getSql(string $table): string
     {
         return sprintf("CREATE TABLE IF NOT EXISTS `%s` (
                     `id` int(11) NOT NULL AUTO_INCREMENT,

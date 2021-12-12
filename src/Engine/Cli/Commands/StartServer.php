@@ -36,5 +36,7 @@ class StartServer extends Command
         );
 
         exec('php -S localhost:'.$port.' -t public');
+
+
     }
 }

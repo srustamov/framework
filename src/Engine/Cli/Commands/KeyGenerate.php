@@ -49,5 +49,7 @@ class KeyGenerate extends Command
                 '<fg=red>'.$e->getMessage().'</>'
             );
         }
+
+        return 1;
     }
 }

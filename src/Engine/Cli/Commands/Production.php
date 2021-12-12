@@ -40,5 +40,7 @@ class Production extends Command
         $output->writeln(
             "\n<fg=green;options=bold>Application in production :)</>\n"
         );
+
+        return 1;
     }
 }

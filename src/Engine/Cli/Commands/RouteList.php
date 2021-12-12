@@ -58,6 +58,8 @@ class RouteList extends Command
         $table->setRows($rows);
 
         $table->render();
+
+        return 1;
     }
 
 

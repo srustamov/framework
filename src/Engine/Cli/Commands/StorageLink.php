@@ -18,7 +18,7 @@ class StorageLink extends Command
             ->setHelp('Symbolic link from '. public_path('storage').' to '. storage_path('public'));
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         exec(
             'ln -s ' . storage_path('public') . ' ' . public_path('storage')
@@ -26,5 +26,7 @@ class StorageLink extends Command
         $output->writeln(
             '<fg=green;options=bold>Symbolic link created</>'
         );
+
+        return 1;
     }
 }

@@ -44,6 +44,8 @@ class Session extends Command
                 $output->writeln("<fg=red>{$e->getmessage()}</>");
             }
         }
+
+        return 1;
     }
 
 

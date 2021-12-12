@@ -87,5 +87,7 @@ class Model extends Command
         $output->writeln(
             sprintf('<fg=green>Create %s successfully</>', $name)
         );
+
+        return 1;
     }
 }
