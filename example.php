@@ -8,6 +8,8 @@ require __DIR__.'/vendor/autoload.php';
 
 $app = new App(dirname(__DIR__));
 
+
+
 Route::get('/',function (Request $request) {
     return $request->all();
 });

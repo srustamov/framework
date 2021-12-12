@@ -33,10 +33,8 @@ class TTException extends Exception
         $this->writeErrorLog($e);
 
         if (CONSOLE) {
-            Console::getWriter()->table(['message', 'file', 'line'], [
-                $e->getMessage(),
-                $e->getFile(),
-                $e->getLine(),
+            Console::getWriter()->table([['message', 'file', 'line']], [
+                [$e->getMessage(), $e->getFile(), $e->getLine(),]
             ]);
             exit;
         }

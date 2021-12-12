@@ -1,6 +1,5 @@
 <?php namespace TT\Engine;
 
-use ReflectionException;
 use TT\Exceptions\TTException;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
