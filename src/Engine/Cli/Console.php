@@ -26,7 +26,7 @@ class Console
         Commands\Development::class,
     ];
 
-    private static Console $instance;
+    private static ?Console $instance = null;
 
     protected static Application $app;
 
