@@ -96,12 +96,7 @@ class View
             $loader->addFileExtension($file_extension);
         }
 
-        $edge = new Edge(
-            $loader,
-            null,
-            new EdgeFileCache(
-                Config::get('view.cache_path')
-            )
+        $edge = new Edge($loader,  new EdgeFileCache(Config::get('view.cache_path'))
         );
 
         if ($extensions = Config::get('view.extensions')) {
