@@ -25,11 +25,8 @@ class Console
         Commands\Production::class,
         Commands\Development::class,
     ];
-
+    protected static ?Application $app = null;
     private static ?Console $instance = null;
-
-    protected static Application $app;
-
     private static ?SymfonyStyle $writer = null;
 
     public static function setApplication(Application $app): Console|static
@@ -39,16 +36,23 @@ class Console
         return self::getInstance();
     }
 
+    public static function getInstance(): Console|static
+    {
+        if (self::$instance === null) {
+            self::$instance = new static;
+        }
+
+        return self::$instance;
+    }
 
     public static function setCommand($commands): Console|static
     {
         $commands = is_array($commands) ? $commands : [$commands];
 
-        self::$commands = array_merge(self::$commands,$commands);
+        self::$commands = array_merge(self::$commands, $commands);
 
         return self::getInstance();
     }
-
 
     /**
      * @throws \Exception
@@ -56,7 +60,7 @@ class Console
     public static function run(): int
     {
         $app = self::getApplication();
-        
+
         foreach (self::$commands as $command) {
             if (is_string($command)) {
                 $app->add(new $command());
@@ -68,7 +72,6 @@ class Console
         return $app->run();
     }
 
-
     public static function getApplication(): Application
     {
         if (self::$app === null) {
@@ -76,6 +79,11 @@ class Console
         }
 
         return self::$app;
+    }
+
+    public static function write($message, $style = 'text')
+    {
+        self::getWriter()->$style($message);
     }
 
     public static function getWriter(): SymfonyStyle
@@ -86,12 +94,6 @@ class Console
         return self::$writer;
     }
 
-
-    public static function write($message,$style = 'text')
-    {
-        self::getWriter()->$style($message);
-    }
-
     private static function getInput(): ArgvInput
     {
         return new ArgvInput();
@@ -100,16 +102,6 @@ class Console
     private static function getOutput(): ConsoleOutput
     {
         return new ConsoleOutput();
-    }
-
-
-    public static function getInstance(): Console|static
-    {
-        if (self::$instance === null) {
-            self::$instance = new static;
-        }
-
-        return self::$instance;
     }
 
 
